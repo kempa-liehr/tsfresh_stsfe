@@ -6,14 +6,13 @@ def derive_features_dictionaries(feature_names: List[str]) -> Tuple[dict, dict]:
     """
     Derives and writes out two feature dictionaries which can be used with the feature dynamics framework.
 
-    Return the dictionaries as a single object, and a flag specifying what type of dictionary... i.e. if it is columns --> feature dict
-
         params:
             feature_names (list of str): the relevant feature names in the form of <ts_kind>||<feature_time_series>__<feature_dynamic>
 
         returns:
-            feature_timeseries_mapping (dict):
-            feature_dynamics_mapping (dict):
+            feature_timeseries_mapping (dict): The feature calculators used to compute the feature time-series on the input time-series
+            feature_dynamics_mapping (dict): The feature calculators used to compute the feature dynamics on the feature time-series
+
     """
 
     assert bool(feature_names) and all(

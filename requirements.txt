@@ -10,3 +10,4 @@ dask[dataframe]>=2.9.0
 distributed>=2.11.0
 md2pdf>=0.5 ## need to resolve issue
 mock
+pytest>=7.2.0

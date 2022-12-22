@@ -6,18 +6,23 @@ from tsfresh.feature_extraction.settings import (
 )
 from tsfresh.feature_selection import select_features
 
-from tsfresh.feature_extraction.derive_features_dictionaries import (
+# Not in tsfresh published package yet
+from derive_features_dictionaries import (
     derive_features_dictionaries,
 )
 
-from tsfresh.feature_extraction.gen_pdf_for_feature_dynamics import (
+# Not in tsfresh published package yet
+from gen_pdf_for_feature_dynamics import (
     gen_pdf_for_feature_dynamics,
 )
-from tsfresh.feature_extraction.engineer_input_timeseries import (
+
+# Not in tsfresh published package yet
+from engineer_input_timeseries import (
     engineer_input_timeseries,
 )
 
-from tsfresh.feature_extraction.gen_example_timeseries_data import (
+# Not in tsfresh published package yet
+from gen_example_timeseries_data import (
     gen_example_timeseries_data,
 )
 
@@ -77,6 +82,8 @@ def controller(
 ##############################################################################################
 
 if __name__ == "__main__":
+
+    print(EfficientFCParameters())
 
     ###############################
     ###############################
