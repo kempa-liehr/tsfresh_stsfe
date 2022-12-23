@@ -9,7 +9,8 @@
 """
 
 import sys
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 with open("README.md") as f:
     long_description = f.read()
@@ -27,4 +28,7 @@ setup(
     setup_requires=["setuptools_scm"] + sphinx,
     packages=find_packages(exclude=["tests.*", "tests"]),
     install_requires=requirements,
+    extras_require={
+        'matrixprofile': ['matrixprofile>=1.1.10,<2.0.0']
+    }
 )

@@ -11,7 +11,11 @@ import numpy as np
 import pandas as pd
 
 from tsfresh import defaults
-from tsfresh.utilities.distribution import MapDistributor, MultiprocessingDistributor, DistributorBaseClass
+from tsfresh.utilities.distribution import (
+    DistributorBaseClass,
+    MapDistributor,
+    MultiprocessingDistributor,
+)
 
 
 def check_for_nans_in_columns(df, columns=None):
@@ -33,8 +37,13 @@ def check_for_nans_in_columns(df, columns=None):
     if pd.isnull(df.loc[:, columns]).any().any():
         if not isinstance(columns, list):
             columns = list(columns)
-        raise ValueError("Columns {} of DataFrame must not contain NaN values".format(
-            df.loc[:, columns].columns[pd.isnull(df.loc[:, columns]).sum() > 0].tolist()))
+        raise ValueError(
+            "Columns {} of DataFrame must not contain NaN values".format(
+                df.loc[:, columns]
+                .columns[pd.isnull(df.loc[:, columns]).sum() > 0]
+                .tolist()
+            )
+        )
 
 
 def impute(df_impute):
@@ -57,6 +66,9 @@ def impute(df_impute):
     :return df_impute: imputed DataFrame
     :rtype df_impute: pandas.DataFrame
     """
+    if len(df_impute) == 0:
+        return df_impute
+
     col_to_max, col_to_min, col_to_median = get_range_values_per_column(df_impute)
     df_impute = impute_dataframe_range(df_impute, col_to_max, col_to_min, col_to_median)
 
@@ -76,6 +88,8 @@ def impute_dataframe_zero(df_impute):
     :return df_impute: imputed DataFrame
     :rtype df_impute: pandas.DataFrame
     """
+    if len(df_impute) == 0:
+        return df_impute
 
     df_impute.replace([np.PINF, np.NINF], 0, inplace=True)
     df_impute.fillna(0, inplace=True)
@@ -117,26 +131,39 @@ def impute_dataframe_range(df_impute, col_to_max, col_to_min, col_to_median):
     :raise ValueError: if a column of df_impute is missing in col_to_max, col_to_min or col_to_median or a value
                        to replace is non finite
     """
+    if len(df_impute) == 0:
+        return df_impute
+
     columns = df_impute.columns
 
     # Making sure col_to_median, col_to_max and col_to_min have entries for every column
-    if not set(columns) <= set(col_to_median.keys()) or \
-            not set(columns) <= set(col_to_max.keys()) or \
-            not set(columns) <= set(col_to_min.keys()):
-        raise ValueError("Some of the dictionaries col_to_median, col_to_max, col_to_min contains more or less keys "
-                         "than the column names in df")
+    if (
+        not set(columns) <= set(col_to_median.keys())
+        or not set(columns) <= set(col_to_max.keys())
+        or not set(columns) <= set(col_to_min.keys())
+    ):
+        raise ValueError(
+            "Some of the dictionaries col_to_median, col_to_max, col_to_min contains more or less keys "
+            "than the column names in df"
+        )
 
     # check if there are non finite values for the replacement
-    if np.any(~np.isfinite(list(col_to_median.values()))) or \
-            np.any(~np.isfinite(list(col_to_min.values()))) or \
-            np.any(~np.isfinite(list(col_to_max.values()))):
-        raise ValueError("Some of the dictionaries col_to_median, col_to_max, col_to_min contains non finite values "
-                         "to replace")
+    if (
+        np.any(~np.isfinite(list(col_to_median.values())))
+        or np.any(~np.isfinite(list(col_to_min.values())))
+        or np.any(~np.isfinite(list(col_to_max.values())))
+    ):
+        raise ValueError(
+            "Some of the dictionaries col_to_median, col_to_max, col_to_min contains non finite values "
+            "to replace"
+        )
 
     # Make the replacement dataframes as large as the real one
     col_to_max = pd.DataFrame([col_to_max] * len(df_impute), index=df_impute.index)
     col_to_min = pd.DataFrame([col_to_min] * len(df_impute), index=df_impute.index)
-    col_to_median = pd.DataFrame([col_to_median] * len(df_impute), index=df_impute.index)
+    col_to_median = pd.DataFrame(
+        [col_to_median] * len(df_impute), index=df_impute.index
+    )
 
     df_impute.where(df_impute.values != np.PINF, other=col_to_max, inplace=True)
     df_impute.where(df_impute.values != np.NINF, other=col_to_min, inplace=True)
@@ -168,8 +195,12 @@ def get_range_values_per_column(df):
 
     if np.any(is_col_non_finite):
         # We have columns that does not contain any finite value at all, so we will store 0 instead.
-        warnings.warn("The columns {} did not have any finite values. Filling with zeros.".format(
-            df.iloc[:, np.where(is_col_non_finite)[0]].columns.values), RuntimeWarning)
+        warnings.warn(
+            "The columns {} did not have any finite values. Filling with zeros.".format(
+                df.iloc[:, np.where(is_col_non_finite)[0]].columns.values
+            ),
+            RuntimeWarning,
+        )
 
         masked.data[:, is_col_non_finite] = 0  # Set the values of the columns to 0
         masked.mask[:, is_col_non_finite] = False  # Remove the mask for this column
@@ -208,8 +239,10 @@ def restrict_input_to_index(df_or_dict, column_id, index):
 
         df_or_dict_restricted = df_or_dict[df_or_dict[column_id].isin(index)]
     elif isinstance(df_or_dict, dict):
-        df_or_dict_restricted = {kind: restrict_input_to_index(df, column_id, index)
-                                 for kind, df in df_or_dict.items()}
+        df_or_dict_restricted = {
+            kind: restrict_input_to_index(df, column_id, index)
+            for kind, df in df_or_dict.items()
+        }
     else:
         raise TypeError("df_or_dict should be of type dict or pandas.DataFrame")
 
@@ -238,8 +271,15 @@ def get_ids(df_or_dict, column_id):
         raise TypeError("df_or_dict should be of type dict or pandas.DataFrame")
 
 
-def _roll_out_time_series(timeshift, grouped_data, rolling_direction, max_timeshift, min_timeshift,
-                          column_sort, column_id):
+def _roll_out_time_series(
+    timeshift,
+    grouped_data,
+    rolling_direction,
+    max_timeshift,
+    min_timeshift,
+    column_sort,
+    column_id,
+):
     """
     Internal helper function for roll_time_series.
     This function has the task to extract the rolled forecast data frame of the number `timeshift`.
@@ -275,6 +315,7 @@ def _roll_out_time_series(timeshift, grouped_data, rolling_direction, max_timesh
     window from the back (but it is implemented to start counting from the beginning).
 
     """
+
     def _f(x):
         if rolling_direction > 0:
             # For positive rolling, the right side of the window moves with `timeshift`
@@ -309,12 +350,20 @@ def _roll_out_time_series(timeshift, grouped_data, rolling_direction, max_timesh
     return [grouped_data.apply(_f)]
 
 
-def roll_time_series(df_or_dict, column_id, column_sort=None, column_kind=None,
-                     rolling_direction=1, max_timeshift=None, min_timeshift=0,
-                     chunksize=defaults.CHUNKSIZE,
-                     n_jobs=defaults.N_PROCESSES, show_warnings=defaults.SHOW_WARNINGS,
-                     disable_progressbar=defaults.DISABLE_PROGRESSBAR,
-                     distributor=None):
+def roll_time_series(
+    df_or_dict,
+    column_id,
+    column_sort=None,
+    column_kind=None,
+    rolling_direction=1,
+    max_timeshift=None,
+    min_timeshift=0,
+    chunksize=defaults.CHUNKSIZE,
+    n_jobs=defaults.N_PROCESSES,
+    show_warnings=defaults.SHOW_WARNINGS,
+    disable_progressbar=defaults.DISABLE_PROGRESSBAR,
+    distributor=None,
+):
     """
     This method creates sub windows of the time series. It rolls the (sorted) data frames for each kind and each id
     separately in the "time" domain (which is represented by the sort order of the sort column given by `column_sort`).
@@ -335,6 +384,7 @@ def roll_time_series(df_or_dict, column_id, column_sort=None, column_kind=None,
        A negative rolling direction means, you go in negative time direction over your data.
        The time series named `([id=]4,[timeshift=]5)` with `max_timeshift` of 3 would then include the data
        of the times 5, 6 and 7.
+       The absolute value defines how much time to shift at each step.
      * It is possible to shift time series of different lengths, but:
      * We assume that the time series are uniformly sampled
      * For more information, please see :ref:`forecasting-label`.
@@ -359,6 +409,7 @@ def roll_time_series(df_or_dict, column_id, column_sort=None, column_kind=None,
     :type column_kind: basestring or None
 
     :param rolling_direction: The sign decides, if to shift our cut-out window backwards or forwards in "time".
+        The absolute value decides, how much to shift at each step.
     :type rolling_direction: int
 
     :param max_timeshift: If not None, the cut-out window is at maximum `max_timeshift` large. If none, it grows
@@ -401,38 +452,52 @@ def roll_time_series(df_or_dict, column_id, column_sort=None, column_kind=None,
 
     if isinstance(df_or_dict, dict):
         if column_kind is not None:
-            raise ValueError("You passed in a dictionary and gave a column name for the kind. Both are not possible.")
+            raise ValueError(
+                "You passed in a dictionary and gave a column name for the kind. Both are not possible."
+            )
 
-        return {key: roll_time_series(df_or_dict=df_or_dict[key],
-                                      column_id=column_id,
-                                      column_sort=column_sort,
-                                      column_kind=column_kind,
-                                      rolling_direction=rolling_direction,
-                                      max_timeshift=max_timeshift,
-                                      min_timeshift=min_timeshift,
-                                      chunksize=chunksize,
-                                      n_jobs=n_jobs,
-                                      show_warnings=show_warnings,
-                                      disable_progressbar=disable_progressbar,
-                                      distributor=distributor)
-                for key in df_or_dict}
+        return {
+            key: roll_time_series(
+                df_or_dict=df_or_dict[key],
+                column_id=column_id,
+                column_sort=column_sort,
+                column_kind=column_kind,
+                rolling_direction=rolling_direction,
+                max_timeshift=max_timeshift,
+                min_timeshift=min_timeshift,
+                chunksize=chunksize,
+                n_jobs=n_jobs,
+                show_warnings=show_warnings,
+                disable_progressbar=disable_progressbar,
+                distributor=distributor,
+            )
+            for key in df_or_dict
+        }
 
     # Now we know that this is a pandas data frame
     df = df_or_dict
 
     if len(df) <= 1:
-        raise ValueError("Your time series container has zero or one rows!. Can not perform rolling.")
+        raise ValueError(
+            "Your time series container has zero or one rows!. Can not perform rolling."
+        )
 
     if column_id is not None:
         if column_id not in df:
-            raise AttributeError("The given column for the id is not present in the data.")
+            raise AttributeError(
+                "The given column for the id is not present in the data."
+            )
     else:
-        raise ValueError("You have to set the column_id which contains the ids of the different time series")
+        raise ValueError(
+            "You have to set the column_id which contains the ids of the different time series"
+        )
 
     if column_kind is not None:
         grouper = [column_kind, column_id]
     else:
-        grouper = [column_id, ]
+        grouper = [
+            column_id,
+        ]
 
     if column_sort is not None:
         # Require no Nans in column
@@ -446,15 +511,19 @@ def roll_time_series(df_or_dict, column_id, column_sort=None, column_kind=None,
             # Build the differences between consecutive time sort values
 
             differences = df.groupby(grouper)[column_sort].apply(
-                lambda x: x.values[:-1] - x.values[1:])
+                lambda x: x.values[:-1] - x.values[1:]
+            )
             # Write all of them into one big list
             differences = sum(map(list, differences), [])
             # Test if all differences are the same
             if differences and min(differences) != max(differences):
-                warnings.warn("Your time stamps are not uniformly sampled, which makes rolling "
-                              "nonsensical in some domains.")
+                warnings.warn(
+                    "Your time stamps are not uniformly sampled, which makes rolling "
+                    "nonsensical in some domains."
+                )
 
     # Roll the data frames if requested
+    rolling_amount = np.abs(rolling_direction)
     rolling_direction = np.sign(rolling_direction)
 
     grouped_data = df.groupby(grouper)
@@ -466,17 +535,23 @@ def roll_time_series(df_or_dict, column_id, column_sort=None, column_kind=None,
     if column_sort is None:
         df["sort"] = range(df.shape[0])
 
-    range_of_shifts = range(1, prediction_steps + 1)
+    if rolling_direction > 0:
+        range_of_shifts = list(reversed(range(prediction_steps, 0, -rolling_amount)))
+    else:
+        range_of_shifts = range(1, prediction_steps + 1, rolling_amount)
 
     if distributor is None:
-        if n_jobs == 0:
-            distributor = MapDistributor(disable_progressbar=disable_progressbar,
-                                         progressbar_title="Rolling")
+        if n_jobs == 0 or n_jobs == 1:
+            distributor = MapDistributor(
+                disable_progressbar=disable_progressbar, progressbar_title="Rolling"
+            )
         else:
-            distributor = MultiprocessingDistributor(n_workers=n_jobs,
-                                                     disable_progressbar=disable_progressbar,
-                                                     progressbar_title="Rolling",
-                                                     show_warnings=show_warnings)
+            distributor = MultiprocessingDistributor(
+                n_workers=n_jobs,
+                disable_progressbar=disable_progressbar,
+                progressbar_title="Rolling",
+                show_warnings=show_warnings,
+            )
 
     if not isinstance(distributor, DistributorBaseClass):
         raise ValueError("the passed distributor is not an DistributorBaseClass object")
@@ -490,8 +565,12 @@ def roll_time_series(df_or_dict, column_id, column_sort=None, column_kind=None,
         "column_id": column_id,
     }
 
-    shifted_chunks = distributor.map_reduce(_roll_out_time_series, data=range_of_shifts,
-                                            chunk_size=chunksize, function_kwargs=kwargs)
+    shifted_chunks = distributor.map_reduce(
+        _roll_out_time_series,
+        data=range_of_shifts,
+        chunk_size=chunksize,
+        function_kwargs=kwargs,
+    )
 
     distributor.close()
 
@@ -535,17 +614,16 @@ def make_forecasting_frame(x, kind, max_timeshift, rolling_direction):
     else:
         t = range(n)
 
-    df = pd.DataFrame({"id": ["id"] * n,
-                       "time": t,
-                       "value": x,
-                       "kind": kind})
+    df = pd.DataFrame({"id": ["id"] * n, "time": t, "value": x, "kind": kind})
 
-    df_shift = roll_time_series(df,
-                                column_id="id",
-                                column_sort="time",
-                                column_kind="kind",
-                                rolling_direction=rolling_direction,
-                                max_timeshift=max_timeshift)
+    df_shift = roll_time_series(
+        df,
+        column_id="id",
+        column_sort="time",
+        column_kind="kind",
+        rolling_direction=rolling_direction,
+        max_timeshift=max_timeshift,
+    )
 
     # drop the rows which should actually be predicted
     def mask_first(x):
@@ -556,20 +634,31 @@ def make_forecasting_frame(x, kind, max_timeshift, rolling_direction):
         result[-1] = 0
         return result
 
-    mask = df_shift.groupby(['id'])['id'].transform(mask_first).astype(bool)
+    mask = df_shift.groupby(["id"])["id"].transform(mask_first).astype(bool)
     df_shift = df_shift[mask]
 
-    return df_shift, df["value"][1:]
+    # Now create the target vector out of the values
+    # of the input series - not including the first one
+    # (as there is nothing to forecast from)
+    y = df["value"][1:]
+
+    # make sure that the format is the same as the
+    # df_shift index
+    y.index = map(lambda x: ("id", x), y.index)
+
+    return df_shift, y
 
 
-def add_sub_time_series_index(df_or_dict, sub_length, column_id=None, column_sort=None, column_kind=None):
+def add_sub_time_series_index(
+    df_or_dict, sub_length, column_id=None, column_sort=None, column_kind=None
+):
     """
     Add a column "id" which contains:
 
     - if column_id is None: for each kind (or if column_kind is None for the full dataframe) a new index built by
       "sub-packaging" the data in packages of length "sub_length". For example if you have data with the
       length of 11 and sub_length is 2, you will get 6 new packages: 0, 0; 1, 1; 2, 2; 3, 3; 4, 4; 5.
-    - if column_id is not None: the same as before, just for each id seperately. The old column_id values are added
+    - if column_id is not None: the same as before, just for each id separately. The old column_id values are added
       to the new "id" column after a comma
 
     You can use this functions to turn a long measurement into sub-packages, where you want to extract features on.
@@ -595,14 +684,20 @@ def add_sub_time_series_index(df_or_dict, sub_length, column_id=None, column_sor
 
     if isinstance(df_or_dict, dict):
         if column_kind is not None:
-            raise ValueError("You passed in a dictionary and gave a column name for the kind. Both are not possible.")
+            raise ValueError(
+                "You passed in a dictionary and gave a column name for the kind. Both are not possible."
+            )
 
-        return {key: add_sub_time_series_index(df_or_dict=df_or_dict[key],
-                                               sub_length=sub_length,
-                                               column_id=column_id,
-                                               column_sort=column_sort,
-                                               column_kind=column_kind)
-                for key in df_or_dict}
+        return {
+            key: add_sub_time_series_index(
+                df_or_dict=df_or_dict[key],
+                sub_length=sub_length,
+                column_id=column_id,
+                column_sort=column_sort,
+                column_kind=column_kind,
+            )
+            for key in df_or_dict
+        }
 
     df = df_or_dict
 
@@ -618,9 +713,13 @@ def add_sub_time_series_index(df_or_dict, sub_length, column_id=None, column_sor
         last_chunk_number = chunk_length // sub_length
         reminder = chunk_length % sub_length
 
-        indices = np.concatenate([np.repeat(np.arange(last_chunk_number), sub_length),
-                                  np.repeat(last_chunk_number, reminder)])
-        assert(len(indices) == chunk_length)
+        indices = np.concatenate(
+            [
+                np.repeat(np.arange(last_chunk_number), sub_length),
+                np.repeat(last_chunk_number, reminder),
+            ]
+        )
+        assert len(indices) == chunk_length
 
         if column_id:
             indices = list(zip(indices, df_chunk[column_id]))

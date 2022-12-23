@@ -5,11 +5,15 @@ from functools import partial
 
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
+
 from tsfresh import defaults
 from tsfresh.feature_extraction.settings import from_columns
 from tsfresh.transformers.feature_augmenter import FeatureAugmenter
 from tsfresh.transformers.feature_selector import FeatureSelector
-from tsfresh.utilities.dataframe_functions import impute_dataframe_range, get_range_values_per_column
+from tsfresh.utilities.dataframe_functions import (
+    get_range_values_per_column,
+    impute_dataframe_range,
+)
 
 
 # Pro: It offers more control
@@ -85,26 +89,34 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
     However, the default settings which are used if you pass no flags are often quite sensible.
     """
 
-    def __init__(self,
-                 filter_only_tsfresh_features=True,
-                 default_fc_parameters=None,
-                 kind_to_fc_parameters=None,
-                 column_id=None, column_sort=None, column_kind=None, column_value=None,
-                 timeseries_container=None,
-                 chunksize=defaults.CHUNKSIZE,
-                 n_jobs=defaults.N_PROCESSES,
-                 show_warnings=defaults.SHOW_WARNINGS,
-                 disable_progressbar=defaults.DISABLE_PROGRESSBAR,
-                 profile=defaults.PROFILING,
-                 profiling_filename=defaults.PROFILING_FILENAME,
-                 profiling_sorting=defaults.PROFILING_SORTING,
-                 test_for_binary_target_binary_feature=defaults.TEST_FOR_BINARY_TARGET_BINARY_FEATURE,
-                 test_for_binary_target_real_feature=defaults.TEST_FOR_BINARY_TARGET_REAL_FEATURE,
-                 test_for_real_target_binary_feature=defaults.TEST_FOR_REAL_TARGET_BINARY_FEATURE,
-                 test_for_real_target_real_feature=defaults.TEST_FOR_REAL_TARGET_REAL_FEATURE,
-                 fdr_level=defaults.FDR_LEVEL,
-                 hypotheses_independent=defaults.HYPOTHESES_INDEPENDENT,
-                 ml_task='auto'):
+    def __init__(
+        self,
+        filter_only_tsfresh_features=True,
+        default_fc_parameters=None,
+        kind_to_fc_parameters=None,
+        column_id=None,
+        column_sort=None,
+        column_kind=None,
+        column_value=None,
+        timeseries_container=None,
+        chunksize=defaults.CHUNKSIZE,
+        n_jobs=defaults.N_PROCESSES,
+        show_warnings=defaults.SHOW_WARNINGS,
+        disable_progressbar=defaults.DISABLE_PROGRESSBAR,
+        profile=defaults.PROFILING,
+        profiling_filename=defaults.PROFILING_FILENAME,
+        profiling_sorting=defaults.PROFILING_SORTING,
+        test_for_binary_target_binary_feature=defaults.TEST_FOR_BINARY_TARGET_BINARY_FEATURE,
+        test_for_binary_target_real_feature=defaults.TEST_FOR_BINARY_TARGET_REAL_FEATURE,
+        test_for_real_target_binary_feature=defaults.TEST_FOR_REAL_TARGET_BINARY_FEATURE,
+        test_for_real_target_real_feature=defaults.TEST_FOR_REAL_TARGET_REAL_FEATURE,
+        fdr_level=defaults.FDR_LEVEL,
+        hypotheses_independent=defaults.HYPOTHESES_INDEPENDENT,
+        ml_task="auto",
+        multiclass=False,
+        n_significant=1,
+        multiclass_p_values="min",
+    ):
         """
         Create a new RelevantFeatureAugmenter instance.
 
@@ -186,9 +198,25 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
 
         :param ml_task: The intended machine learning task. Either `'classification'`, `'regression'` or `'auto'`.
                     Defaults to `'auto'`, meaning the intended task is inferred from `y`.
-                    If `y` has a boolean, integer or object dtype, the task is assumend to be classification,
+                    If `y` has a boolean, integer or object dtype, the task is assumed to be classification,
                     else regression.
         :type ml_task: str
+
+        :param multiclass: Whether the problem is multiclass classification. This modifies the way in which features
+                       are selected. Multiclass requires the features to be statistically significant for
+                       predicting n_significant classes.
+        :type multiclass: bool
+
+        :param n_significant: The number of classes for which features should be statistically significant predictors
+                            to be regarded as 'relevant'
+        :type n_significant: int
+
+        :param multiclass_p_values: The desired method for choosing how to display multiclass p-values for each feature.
+                                    Either `'avg'`, `'max'`, `'min'`, `'all'`. Defaults to `'min'`, meaning the p-value
+                                    with the highest significance is chosen. When set to `'all'`, the attributes
+                                    `self.feature_importances_` and `self.p_values` are of type pandas.DataFrame, where
+                                    each column corresponds to a target class.
+        :type multiclass_p_values: str
         """
         self.filter_only_tsfresh_features = filter_only_tsfresh_features
         self.default_fc_parameters = default_fc_parameters
@@ -205,13 +233,18 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
         self.profile = profile
         self.profiling_filename = profiling_filename
         self.profiling_sorting = profiling_sorting
-        self.test_for_binary_target_binary_feature = test_for_binary_target_binary_feature
+        self.test_for_binary_target_binary_feature = (
+            test_for_binary_target_binary_feature
+        )
         self.test_for_binary_target_real_feature = test_for_binary_target_real_feature
         self.test_for_real_target_binary_feature = test_for_real_target_binary_feature
         self.test_for_real_target_real_feature = test_for_real_target_real_feature
         self.fdr_level = fdr_level
         self.hypotheses_independent = hypotheses_independent
         self.ml_task = ml_task
+        self.multiclass = multiclass
+        self.n_significant = n_significant
+        self.multiclass_p_values = multiclass_p_values
 
         # attributes
         self.feature_extractor = None
@@ -274,7 +307,9 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
         """
 
         if self.timeseries_container is None:
-            raise RuntimeError("You have to provide a time series using the set_timeseries_container function before.")
+            raise RuntimeError(
+                "You have to provide a time series using the set_timeseries_container function before."
+            )
 
         if self.feature_selector is None:
             raise RuntimeError("You have to call fit before calling transform.")
@@ -284,34 +319,46 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
 
         self.feature_extractor.set_timeseries_container(self.timeseries_container)
 
-        relevant_time_series_features = set(self.feature_selector.relevant_features) - set(pd.DataFrame(X).columns)
+        relevant_time_series_features = set(
+            self.feature_selector.relevant_features
+        ) - set(pd.DataFrame(X).columns)
         relevant_extraction_settings = from_columns(relevant_time_series_features)
 
         # Set imputing strategy
-        impute_function = partial(impute_dataframe_range, col_to_max=self.col_to_max,
-                                  col_to_min=self.col_to_min, col_to_median=self.col_to_median)
+        impute_function = partial(
+            impute_dataframe_range,
+            col_to_max=self.col_to_max,
+            col_to_min=self.col_to_min,
+            col_to_median=self.col_to_median,
+        )
 
-        relevant_feature_extractor = FeatureAugmenter(kind_to_fc_parameters=relevant_extraction_settings,
-                                                      default_fc_parameters={},
-                                                      column_id=self.feature_extractor.column_id,
-                                                      column_sort=self.feature_extractor.column_sort,
-                                                      column_kind=self.feature_extractor.column_kind,
-                                                      column_value=self.feature_extractor.column_value,
-                                                      chunksize=self.feature_extractor.chunksize,
-                                                      n_jobs=self.feature_extractor.n_jobs,
-                                                      show_warnings=self.feature_extractor.show_warnings,
-                                                      disable_progressbar=self.feature_extractor.disable_progressbar,
-                                                      impute_function=impute_function,
-                                                      profile=self.feature_extractor.profile,
-                                                      profiling_filename=self.feature_extractor.profiling_filename,
-                                                      profiling_sorting=self.feature_extractor.profiling_sorting)
+        relevant_feature_extractor = FeatureAugmenter(
+            kind_to_fc_parameters=relevant_extraction_settings,
+            default_fc_parameters={},
+            column_id=self.feature_extractor.column_id,
+            column_sort=self.feature_extractor.column_sort,
+            column_kind=self.feature_extractor.column_kind,
+            column_value=self.feature_extractor.column_value,
+            chunksize=self.feature_extractor.chunksize,
+            n_jobs=self.feature_extractor.n_jobs,
+            show_warnings=self.feature_extractor.show_warnings,
+            disable_progressbar=self.feature_extractor.disable_progressbar,
+            impute_function=impute_function,
+            profile=self.feature_extractor.profile,
+            profiling_filename=self.feature_extractor.profiling_filename,
+            profiling_sorting=self.feature_extractor.profiling_sorting,
+        )
 
-        relevant_feature_extractor.set_timeseries_container(self.feature_extractor.timeseries_container)
+        relevant_feature_extractor.set_timeseries_container(
+            self.feature_extractor.timeseries_container
+        )
 
         X_augmented = relevant_feature_extractor.transform(X)
 
         if self.filter_only_tsfresh_features:
-            return X_augmented.copy().loc[:, self.feature_selector.relevant_features + X.columns.tolist()]
+            return X_augmented.copy().loc[
+                :, self.feature_selector.relevant_features + X.columns.tolist()
+            ]
         else:
             return X_augmented.copy().loc[:, self.feature_selector.relevant_features]
 
@@ -333,10 +380,16 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
         """
         X_augmented = self._fit_and_augment(X, y)
 
+        selected_features = X_augmented.copy().loc[
+            :, self.feature_selector.relevant_features
+        ]
+
         if self.filter_only_tsfresh_features:
-            return X_augmented.copy().loc[:, self.feature_selector.relevant_features + X.columns.tolist()]
-        else:
-            return X_augmented.copy().loc[:, self.feature_selector.relevant_features]
+            selected_features = pd.merge(
+                selected_features, X, left_index=True, right_index=True, how="left"
+            )
+
+        return selected_features
 
     def _fit_and_augment(self, X, y):
         """
@@ -350,11 +403,14 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
         :param y: The target vector to define, which features are relevant.
         :type y: pandas.Series or numpy.array
 
-        :return: the fitted estimator with the information, which features are relevant.
-        :rtype: RelevantFeatureAugmenter
+        :return: a data sample with the extraced time series features. If filter_only_tsfresh_features is False
+            the data sample will also include the information in X.
+        :rtype: pandas.DataFrame
         """
         if self.timeseries_container is None:
-            raise RuntimeError("You have to provide a time series using the set_timeseries_container function before.")
+            raise RuntimeError(
+                "You have to provide a time series using the set_timeseries_container function before."
+            )
 
         self.feature_extractor = FeatureAugmenter(
             default_fc_parameters=self.default_fc_parameters,
@@ -370,7 +426,7 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
             disable_progressbar=self.disable_progressbar,
             profile=self.profile,
             profiling_filename=self.profiling_filename,
-            profiling_sorting=self.profiling_sorting
+            profiling_sorting=self.profiling_sorting,
         )
 
         self.feature_selector = FeatureSelector(
@@ -382,7 +438,10 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
             hypotheses_independent=self.hypotheses_independent,
             n_jobs=self.n_jobs,
             chunksize=self.chunksize,
-            ml_task=self.ml_task
+            ml_task=self.ml_task,
+            multiclass=self.multiclass,
+            n_significant=self.n_significant,
+            multiclass_p_values=self.multiclass_p_values,
         )
 
         if self.filter_only_tsfresh_features:
@@ -393,9 +452,17 @@ class RelevantFeatureAugmenter(BaseEstimator, TransformerMixin):
 
         X_augmented = self.feature_extractor.transform(X_tmp)
 
-        self.col_to_max, self.col_to_min, self.col_to_median = get_range_values_per_column(X_augmented)
-        X_augmented = impute_dataframe_range(X_augmented, col_to_max=self.col_to_max, col_to_median=self.col_to_median,
-                                             col_to_min=self.col_to_min)
+        (
+            self.col_to_max,
+            self.col_to_min,
+            self.col_to_median,
+        ) = get_range_values_per_column(X_augmented)
+        X_augmented = impute_dataframe_range(
+            X_augmented,
+            col_to_max=self.col_to_max,
+            col_to_median=self.col_to_median,
+            col_to_min=self.col_to_min,
+        )
 
         self.feature_selector.fit(X_augmented, y)
 

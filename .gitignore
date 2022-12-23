@@ -1,3 +1,6 @@
+#others
+*.lock
+
 # Temporary and binary files
 *~
 *.py[cod]
@@ -28,6 +31,7 @@ __pycache__/*
 # Unittest and coverage
 htmlcov/*
 .coverage
+.coverage.*
 .tox
 junit.xml
 coverage.xml
@@ -57,3 +61,6 @@ tsfresh/notebooks/data/
 # Markdown & pdf interpretation output files
 feature_dynamics_interpretation.pdf
 feature_dynamics_interpretation.md
+# dask
+dask-worker-space
+dask-worker-space/
