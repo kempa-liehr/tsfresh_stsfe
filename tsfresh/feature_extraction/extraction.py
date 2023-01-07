@@ -360,9 +360,6 @@ def _do_extraction_on_chunk(
             else:
                 x = data.values
 
-            # Casting ndarray with dtype object to dtype float as dtype object is not compatible with some feature calculators
-            x = np.asarray(x, dtype=float)
-
             if func.fctype == "combiner":
                 result = func(x, param=parameter_list)
             else:

@@ -114,8 +114,6 @@ def extract_feature_dynamics(timeseries_container,
     # TODO: Add assert that ensures window length conforms with the size of the data
     # TODO: Add assert that timeseries is long enough for feature dynamics
     # TODO: New windowing scheme (dictionary)
-    # TODO: New naming convention
-
     ts_data = to_tsdata(timeseries_container, column_id=column_id, column_sort=column_sort, column_kind=column_kind, column_value=column_value)
     if isinstance(ts_data, Iterable):
         split_ts_data = IterableSplitTsData(ts_data, window_length)
@@ -134,7 +132,8 @@ def extract_feature_dynamics(timeseries_container,
     # and where the real feature name starts.
     # Also, we split up the index into the id and the sort
     # We need to do this separately for dask dataframes,
-    # as the return type is not a list, but already a dataframe
+    # as the return type is not a list, but already a dataframe.
+    # We also need to drop values that contain NaNs.
     if isinstance(feature_timeseries, dd.DataFrame):
         feature_timeseries = feature_timeseries.reset_index(drop=True)
 
@@ -162,7 +161,13 @@ def extract_feature_dynamics(timeseries_container,
 
         feature_timeseries[column_id] = feature_timeseries[column_id].apply(lambda x: x[0])
 
-    X = extract_features(feature_timeseries, column_id=column_id, column_sort=column_sort, column_kind=column_kind, column_value=column_value,
+    # Coerce time series values, which include boolean values, integers, and floats, which are 
+    # currently stored as dtype: "object" into floats.
+    feature_timeseries[column_value] = pd.to_numeric(feature_timeseries[column_value]) 
+
+    feature_timeseries_ts_data = to_tsdata(feature_timeseries, column_id=column_id, column_sort=column_sort,column_kind=column_kind, column_value=column_value)
+    
+    X = extract_features(feature_timeseries_ts_data, column_id=column_id, column_sort=column_sort, column_kind=column_kind, column_value=column_value,
                          default_fc_parameters=feature_dynamics_fc_parameters, kind_to_fc_parameters=feature_dynamics_kind_to_fc_parameters,
                          **kwargs)    
 
