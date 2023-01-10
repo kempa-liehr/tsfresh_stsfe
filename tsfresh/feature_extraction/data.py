@@ -51,6 +51,15 @@ class TsData:
 
     pass
 
+class ApplyableTsData(TsData):
+    """
+    TsData base class to use, if an iterable ts data can not be used.
+    Its only interface is an apply function, which should be applied
+    to each of the chunks of the data. How this is done
+    depends on the implementation.
+    """
+    def apply(self, f, **kwargs):
+        raise NotImplementedError
 
 class PartitionedTsData(Iterable[Timeseries], Sized, TsData):
     """
