@@ -413,8 +413,8 @@ if __name__ == "__main__":
 
     print(f"\nTime series input:\n\n{ts}")
     print(f"\nTime series response vector:\n\n{response}")
-    window_length_1 = 0
-    window_length_2 = 4
+    window_length_1 = 4
+    window_length_2 = 5
 
     X = extract_feature_dynamics(
         timeseries_container=ts,

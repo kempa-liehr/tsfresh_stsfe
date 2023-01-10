@@ -35,6 +35,7 @@ def extract_feature_dynamics(
     # Validation checks
     # Assert one or the other is not none
     # Assert that things match up with kind to fc params for both fts and fd
+    # Make sure that dictionaries are supplied to this function!
 
     if feature_timeseries_kind_to_fc_parameters is not None:
         fts_dictionary_to_iterate = feature_timeseries_kind_to_fc_parameters
@@ -74,16 +75,7 @@ def extract_feature_dynamics(
             feature_dynamics_kind_to_fc_parameters_input = None
 
         if window_length == 0:
-            X = extract_features(
-                timeseries_container,
-                default_fc_parameters=feature_timeseries_fc_parameters_input,
-                kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters_input,
-                column_id=column_id,
-                column_sort=column_sort,
-                column_kind=column_kind,
-                column_value=column_value,
-                **kwargs
-            )
+            raise ValueError("extract_feature_dynamics() does not support window lengths of zero. Consider using extract_features() instead.")
 
         else:
             X = do_feature_dynamics_extraction(
@@ -188,8 +180,11 @@ def do_feature_dynamics_extraction(
 
     """
 
-    # TODO: Add assert that ensures window length conforms with the size of the data
-    # TODO: Add assert that timeseries is long enough for feature dynamics
+    if not isinstance(window_length, int):
+            raise TypeError(f"Window length needs to be of type int, but was found to be type {type(window_length)}. Currently only integer window lengths are accepted for extracting feature dynamics")
+
+    # TODO: Implement a check which makes sure that the window length is not too large... otherwise there will be weird bugs
+    # IMPORTANT TODO ^^^ right now there are no checks on illegal window lengths...
 
     ts_data = to_tsdata(
         timeseries_container,
@@ -198,6 +193,7 @@ def do_feature_dynamics_extraction(
         column_kind=column_kind,
         column_value=column_value,
     )
+
 
     if isinstance(ts_data, Iterable):
         split_ts_data = IterableSplitTsData(ts_data, window_length)
@@ -275,20 +271,12 @@ def do_feature_dynamics_extraction(
             ~feature_timeseries[column_kind].isin(null_columns)
         ]
 
-    # Coerce time series values, which include boolean values, integers, and floats, which are
-    # currently stored as dtype: "object" into floats.
+    # Coerce time series values, which include boolean values, integers, and floats
+    # (currently all stored as dtype: "object") into floats.
     feature_timeseries[column_value] = pd.to_numeric(feature_timeseries[column_value])
 
-    feature_timeseries_ts_data = to_tsdata(
-        feature_timeseries,
-        column_id=column_id,
-        column_sort=column_sort,
-        column_kind=column_kind,
-        column_value=column_value,
-    )
-
     X = extract_features(
-        feature_timeseries_ts_data,
+        feature_timeseries,
         column_id=column_id,
         column_sort=column_sort,
         column_kind=column_kind,

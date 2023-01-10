@@ -5,8 +5,6 @@ import pandas as pd
 from pandas.api.types import is_numeric_dtype
 from typing import List
 from md2pdf.core import md2pdf
-from collections import defaultdict
-import sys
 from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
 
@@ -67,7 +65,10 @@ def update_feature_dictionary(feature_dictionary, window_length, feature_parts):
 
 
 def parse_feature_timeseries_parts(full_feature_name):
-    """ """
+    """ 
+    
+    NB: Also handles the case where the window length is zero... i.e. vanilla features
+    """
 
     ts_kind_token = "||"
     param_token = "|"
@@ -84,11 +85,13 @@ def parse_feature_timeseries_parts(full_feature_name):
 
     if "window_" not in fts_parts[-1]:
         raise ValueError(
-            "Window length information not found in feature time series name"
+            "Window length information not found in feature time series name. Did you pass in a window length of zero?"
         )
-
-    window_length = int(fts_parts[-1].replace("window_", ""))
-    fts_parts = fts_parts[:-1]  # remove window window information from fts_parts
+        
+    else:
+        # remove window length information from ts_parts
+        window_length = int(fts_parts[-1].replace("window_", ""))
+        fts_parts = fts_parts[:-1]
 
     n_fts_parts = len(fts_parts)
     if n_fts_parts == 1:
