@@ -77,20 +77,19 @@ def extract_feature_dynamics(
         if window_length == 0:
             raise ValueError("extract_feature_dynamics() does not support window lengths of zero. Consider using extract_features() instead.")
 
-        else:
-            X = do_feature_dynamics_extraction(
-                timeseries_container,
-                window_length=window_length,
-                feature_timeseries_fc_parameters=feature_timeseries_fc_parameters_input,
-                feature_timeseries_kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters_input,
-                feature_dynamics_fc_parameters=feature_dynamics_fc_parameters_input,
-                feature_dynamics_kind_to_fc_parameters=feature_dynamics_kind_to_fc_parameters_input,
-                column_id=column_id,
-                column_sort=column_sort,
-                column_kind=column_kind,
-                column_value=column_value,
-                **kwargs
-            )
+        X = do_feature_dynamics_extraction(
+            timeseries_container,
+            window_length=window_length,
+            feature_timeseries_fc_parameters=feature_timeseries_fc_parameters_input,
+            feature_timeseries_kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters_input,
+            feature_dynamics_fc_parameters=feature_dynamics_fc_parameters_input,
+            feature_dynamics_kind_to_fc_parameters=feature_dynamics_kind_to_fc_parameters_input,
+            column_id=column_id,
+            column_sort=column_sort,
+            column_kind=column_kind,
+            column_value=column_value,
+            **kwargs
+        )
 
         Xs.append(X)
 
