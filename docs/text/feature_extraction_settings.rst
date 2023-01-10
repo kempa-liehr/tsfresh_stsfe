@@ -29,11 +29,7 @@ custom settings object:
 >>> from tsfresh.feature_extraction import extract_features
 >>> extract_features(df, default_fc_parameters=settings)
 
-<<<<<<< HEAD
-The ``default_fc_parameters`` is expected to be a dictionary, which maps feature calculator names
-=======
 The ``default_fc_parameters`` is expected to be a dictionary which maps feature calculator names
->>>>>>> origin/main
 (the function names you can find in the :mod:`tsfresh.feature_extraction.feature_calculators` file) to a list
 of dictionaries, which are the parameters with which the function will be called (as key value pairs). Each
 function-parameter combination that is in this dict will be called during the extraction and will produce a feature.
