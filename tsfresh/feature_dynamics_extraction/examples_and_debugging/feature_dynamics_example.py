@@ -2,7 +2,10 @@ import dask.dataframe as dd
 import pandas as pd
 import numpy as np
 
-from tsfresh.feature_dynamics_extraction.feature_dynamics_extraction import extract_feature_dynamics
+from tsfresh.feature_dynamics_extraction.feature_dynamics_extraction import (
+    extract_feature_dynamics,
+    extract_feature_dynamics_wrapped,
+)
 from tsfresh.feature_extraction.settings import (
     MinimalFCParameters,
     EfficientFCParameters,
@@ -13,10 +16,11 @@ from tsfresh.feature_selection import select_features
 from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
     derive_features_dictionaries,
     gen_pdf_for_feature_dynamics,
-    engineer_input_timeseries
+    engineer_input_timeseries,
 )
 
 # NOTE: The intent of this file is NOT to be a test suite but more of a "debug playground"
+
 
 def gen_example_timeseries_data(container_type="pandas"):
 
@@ -410,17 +414,20 @@ if __name__ == "__main__":
 
     print(f"\nTime series input:\n\n{ts}")
     print(f"\nTime series response vector:\n\n{response}")
-    window_length = 3
-    X = extract_feature_dynamics(
+    window_length_1 = 3
+    window_length_2 = 4
+
+    X = extract_feature_dynamics_wrapped(
         timeseries_container=ts,
-        window_length=window_length,
         n_jobs=0,
-        feature_timeseries_fc_parameters=config["Feature Calculators"][
-            "Feature Timeseries"
-        ],
-        feature_dynamics_fc_parameters=config["Feature Calculators"][
-            "Feature Dynamics"
-        ],
+        feature_timeseries_fc_parameters={
+            window_length_1: config["Feature Calculators"]["Feature Timeseries"],
+            window_length_2: config["Feature Calculators"]["Feature Timeseries"],
+        },
+        feature_dynamics_fc_parameters={
+            window_length_1: config["Feature Calculators"]["Feature Dynamics"],
+            window_length_2: config["Feature Calculators"]["Feature Dynamics"],
+        },
         column_id="measurement_id",
         column_sort="t",
         column_kind=None,
@@ -448,13 +455,11 @@ if __name__ == "__main__":
             subset_of_rel_feature_names = rel_feature_names[0:5]
             gen_pdf_for_feature_dynamics(
                 feature_dynamics_names=subset_of_rel_feature_names,
-                window_length=window_length,
             )
 
         if config["Extract On Selected"]:
-            X = extract_feature_dynamics(
+            X = extract_feature_dynamics_wrapped(
                 timeseries_container=ts,
-                window_length=window_length,
                 n_jobs=0,
                 feature_timeseries_kind_to_fc_parameters=feature_time_series_dict,
                 feature_dynamics_kind_to_fc_parameters=feature_dynamics_dict,

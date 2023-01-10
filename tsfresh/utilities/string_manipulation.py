@@ -22,8 +22,6 @@ def get_config_from_string(parts):
     :return: a dictionary with all parameters, which are encoded in the column name.
     :rtype: dict
     """
-    print("PARTS HERE!")
-    print(parts)
     relevant_parts = parts[2:]
     if not relevant_parts:
         return

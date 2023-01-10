@@ -11,65 +11,35 @@ from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
 
 
-
-
 def generate_feature_name_encoding(feature_names):
     """
     returns a dictionary which maps encoded feature
-    names to their long full feature names 
+    names to their long full feature names
     """
     pass
 
-def clean_feature_timeseries_name(feature_timeseries_name:str, window_length: int) -> str:
+
+def clean_feature_timeseries_name(
+    feature_timeseries_name: str, window_length: int
+) -> str:
     """
     Logic to clean up the feature time series name after the first round of extraction
 
     NB: This might not be sufficient but use this for now
     """
 
-    return feature_timeseries_name.replace("__", "||", 1).replace("__", "|") + f"@window_{window_length}"
+    return (
+        feature_timeseries_name.replace("__", "||", 1).replace("__", "|")
+        + f"@window_{window_length}"
+    )
 
 
-def parse_feature_dynamic_name(feature_dynamic_full_name):
-    window_length_token = "@"
-    ts_kind_token = "||"
-    param_token = "|"
-    print(feature_dynamic_full_name)
-
-
-    cleaned_feature_dynamic_name = feature_dynamic_full_name.replace(ts_kind_token, "__").replace(param_token, "__").replace(window_length_token, "__")
-    parts = cleaned_feature_dynamic_name.split("__")
-    print(parts)
-
-    window_length = feature_dynamic_full_name.split(window_length_token)[1].split("__")[0]
-    ts_kind = feature_dynamic_full_name.split(ts_kind_token)[0]
-    feature_timeseries_calculator_name = feature_dynamic_full_name.split(ts_kind_token)[1].split(window_length_token)[0]
-    feature_timeseries_calculator_params = 0
-    feature_dynamic_calculator_name = 0
-    feature_dynamic_calculator_params = 0  
-
-
-    return {
-        "feature_dynamic_full_name" : feature_dynamic_full_name,
-        "window_length" : window_length,
-        "ts_kind" : ts_kind,
-        "feature_timeseries_calculator_name": feature_timeseries_calculator_name,
-        "feature_timeseries_calculator_params": feature_timeseries_calculator_params,
-        "feature_dynamic_calculator_name": feature_dynamic_calculator_name,
-        "feature_dynamic_calculator_params": feature_dynamic_calculator_params,
-    }
-
-
-def add_to_feature_dictionary_with_windows(feature_dictionary, window_length, feature_parts):
+def update_feature_dictionary(feature_dictionary, window_length, feature_parts):
     """
     Assume parts is kind, feature_name, feature_params
     Adds entries to a feature calculator dictionary
     """
 
-    # Data validation stuff
-    # <insert validaiton here>
-
-    # Splitting into the right stuff
     ts_kind = feature_parts[0]
     feature_name = feature_parts[1]
 
@@ -77,7 +47,7 @@ def add_to_feature_dictionary_with_windows(feature_dictionary, window_length, fe
         feature_dictionary[window_length] = {}
 
     if ts_kind not in feature_dictionary[window_length]:
-        feature_dictionary[window_length][ts_kind] = {} 
+        feature_dictionary[window_length][ts_kind] = {}
 
     if not hasattr(feature_calculators, feature_name):
         raise ValueError("Unknown feature name {}".format(feature_name))
@@ -93,7 +63,54 @@ def add_to_feature_dictionary_with_windows(feature_dictionary, window_length, fe
         feature_dictionary[window_length][ts_kind][feature_name] = None
 
     return feature_dictionary
-    
+
+
+def parse_feature_timeseries_parts(full_feature_name):
+    """ """
+
+    ts_kind_token = "||"
+    param_token = "|"
+    window_length_token = "@"
+
+    # Split according to our separator into <col_name>, <feature_name>, <feature_params> <window_length>
+    fts_parts = (
+        full_feature_name.split("__")[0]
+        .replace(ts_kind_token, "__")
+        .replace(param_token, "__")
+        .replace(window_length_token, "__")
+        .split("__")
+    )
+
+    if "window_" not in fts_parts[-1]:
+        raise ValueError(
+            "Window length information not found in feature time series name"
+        )
+
+    window_length = int(fts_parts[-1].replace("window_", ""))
+    fts_parts = fts_parts[:-1]  # remove window window information from fts_parts
+
+    n_fts_parts = len(fts_parts)
+    if n_fts_parts == 1:
+        raise ValueError(
+            "Splitting of columnname {} resulted in only one part.".format(
+                full_feature_name
+            )
+        )
+
+    return {"window_length": window_length, "fts_parts": fts_parts}
+
+
+def parse_feature_dynamics_parts(full_feature_name):
+    # Split according to our separator into <col_name>, <feature_name>, <feature_params>
+    fd_parts = full_feature_name.split("__")
+    n_fd_parts = len(fd_parts)
+    if n_fd_parts == 1:
+        raise ValueError(
+            "Splitting of columnname {} resulted in only one part.".format(
+                full_feature_name
+            )
+        )
+    return {"fd_parts": fd_parts}
 
 
 def derive_features_dictionaries(feature_names: List[str]) -> Tuple[dict, dict]:
@@ -101,116 +118,42 @@ def derive_features_dictionaries(feature_names: List[str]) -> Tuple[dict, dict]:
     Derives and writes out two feature dictionaries which can be used with the feature dynamics framework.
 
         params:
-            feature_names (list of str): the relevant feature names in the form of <ts_kind>||<feature_time_series>__<feature_dynamic>
+            feature_names (list of str): the relevant feature names in the form of:
+            <ts_kind>||<feature_time_series>|<feature_times_series_params>@<window_length>__<feature_dynamics>__<feature_dynamics_params>
 
         returns:
-            feature_timeseries_mapping (dict): The feature calculators used to compute the feature time-series on the input time-series
-            feature_dynamics_mapping (dict): The feature calculators used to compute the feature dynamics on the feature time-series
+            fts_mapping (dict): The feature calculators used to compute the feature time-series on the input time-series
+            fd_mapping (dict): The feature calculators used to compute the feature dynamics on the feature time-series
+            # NB: Talk about how it maps window_length ---> column ---> calcs
 
     """
+    # window_length ---> ts_kind ---> feature calcs
+    fts_mapping = {}
+    # window_length ---> feature_timeseries name --> feature dynamics calcs
+    fd_mapping = {}
 
-    # TODO: NEEDS A HUGE CLEANUP!!!
-
-    assert bool(feature_names) and all(
-        isinstance(feature_name, str) for feature_name in feature_names
-    )
-
-    # Tokens for ts_kind separator 
-    # and the param separator 
-    # and the feature timeseries window_length separator 
-    ts_kind_token = "||"
-    param_token = "|"
-    window_length_token = "@"
-
-    # TODO: Map window length to ts_kind_dictionary
-    # TODO: Map ts_kind to feature timeseries calculators
-    # TODO: Map feature_timeseries's to feature dynamics calculators
-    fts_mapping = {}  # window_length ---> ts_kind ---> feature calcs
-    fd_mapping = {} # window_length ---> feature_timeseries name with window_length --> feature dynamics calcs
-    skee = {}
-    # Then function does for window_length, {ts_kind--->fts calculator}: extract_features(...)
-    print(feature_names)
     for full_feature_name in feature_names:
-
         if not isinstance(full_feature_name, str):
-            raise TypeError("Column name {} should be a string or unicode".format(full_feature_name))
-
-        # Split according to our separator into <col_name>, <feature_name>, <feature_params> <window_length>
-        fts_parts = full_feature_name.split("__")[0].replace(ts_kind_token, "__").replace(param_token, "__").replace(window_length_token, "__").split("__")
-        n_fts_parts = len(fts_parts)
-
-        if n_fts_parts == 1:
-            raise ValueError(
-                "Splitting of columnname {} resulted in only one part.".format(full_feature_name)
+            raise TypeError(
+                "Column name {} should be a string or unicode".format(full_feature_name)
             )
 
-        # split up into parts
-        fd_parts = full_feature_name.split("__")
-        n_fd_parts = len(fd_parts)
+        fts_information = parse_feature_timeseries_parts(full_feature_name)
+        fts_mapping = update_feature_dictionary(
+            fts_mapping,
+            window_length=fts_information.get("window_length"),
+            feature_parts=fts_information.get("fts_parts"),
+        )
 
+        fd_information = parse_feature_dynamics_parts(full_feature_name)
+        fd_mapping = update_feature_dictionary(
+            fd_mapping,
+            window_length=fts_information.get("window_length"),
+            feature_parts=fd_information.get("fd_parts"),
+        )
 
-        if n_fd_parts == 1:
-            raise ValueError(
-                "Splitting of columnname {} resulted in only one part.".format(full_feature_name)
-            )
-
-
-        # Bunch of ugly stuff here
-        feature_timeseries_name = fd_parts[0]
-        feature_dynamics_name = fd_parts[1]
-        kind = fts_parts[0]
-        feature_ts_name = fts_parts[1]
-        window_length_full_name = fts_parts[-1]
-        window_length = int(fts_parts[-1].replace("window_", ""))
-        fts_parts.remove(window_length_full_name)
-        
-        # fd mapping
-        if window_length not in fd_mapping:
-            fd_mapping[window_length] = {}
-
-        if feature_timeseries_name not in fd_mapping:
-            fd_mapping[window_length][feature_timeseries_name] = {}
-
-        if not hasattr(feature_calculators, feature_dynamics_name):
-            raise ValueError("Unknown feature name {}".format(feature_dynamics_name))
-
-        fd_config = get_config_from_string(fd_parts)
-        if fd_config:
-            if feature_dynamics_name in fd_mapping[window_length][feature_timeseries_name]:
-                fd_mapping[window_length][feature_timeseries_name][feature_dynamics_name].append(fd_config)
-            else:
-                fd_mapping[window_length][feature_timeseries_name][feature_dynamics_name] = [fd_config]
-        else:
-            fd_mapping[window_length][feature_timeseries_name][feature_dynamics_name] = None
-
-
-
-        # Fts mapping
-        if window_length not in fts_mapping:
-            fts_mapping[window_length] = {}
-
-        if kind not in fts_mapping[window_length]:
-            fts_mapping[window_length][kind] = {}       
-
-        if not hasattr(feature_calculators, feature_ts_name):
-            raise ValueError("Unknown feature name {}".format(feature_ts_name))
-
-        config = get_config_from_string(fts_parts)
-        if config:
-            if feature_ts_name in fts_mapping[window_length][kind]:
-                if config not in fts_mapping[window_length][kind][feature_ts_name]:
-                    fts_mapping[window_length][kind][feature_ts_name].append(config)
-            else:
-                fts_mapping[window_length][kind][feature_ts_name] = [config]
-        else:
-            fts_mapping[window_length][kind][feature_ts_name] = None
-
-        print("THE MAIN EVENT")
-        skee = add_to_feature_dictionary_with_windows(skee, window_length, fts_parts)
-        print("THIS IS WHAT skee looks like")
-        print(skee)
-    sys.exit()
     return fts_mapping, fd_mapping
+
 
 def engineer_input_timeseries(
     timeseries: pd.DataFrame,
@@ -233,9 +176,7 @@ def engineer_input_timeseries(
     def series_differencing(ts: pd.DataFrame, ts_kinds: List[str]) -> pd.DataFrame:
         for ts_kind in ts_kinds:
             ts["dt_" + ts_kind] = ts[ts_kind].diff()
-            ts.loc[
-                0, ["dt_" + ts_kind]
-            ] = 0  # adjust for the NaN value at first index.
+            ts.loc[0, ["dt_" + ts_kind]] = 0  # adjust for the NaN value at first index.
         return ts
 
     def diff_between_series(ts: pd.DataFrame, ts_kinds: str) -> pd.DataFrame:
@@ -270,13 +211,10 @@ def engineer_input_timeseries(
         ts = diff_between_series(ts, ts_kinds)
 
     return ts.join(ts_meta)
-    
 
 
 def interpret_feature_dynamic(feature_dynamic: str) -> dict:
-    """
-    
-    """
+    """ """
     assert isinstance(feature_dynamic, str)
 
     # Generate the dictionaries that describe the information
@@ -285,9 +223,10 @@ def interpret_feature_dynamic(feature_dynamic: str) -> dict:
     )
 
     # Derive the key information that parameterises the feature name
-    input_timeseries = next(iter(feature_timeseries_mapping.keys()))
-    feature_dynamic_calculator = next(iter(feature_dynamics_mapping.values()))
-    feature_timeseries_calculator, window_length = list(feature_timeseries_mapping.values())[0]
+    window_length = next(iter(feature_timeseries_mapping.keys()))
+    input_timeseries = next(iter(feature_timeseries_mapping[window_length].keys()))
+    feature_dynamic_calculator = next(iter(feature_dynamics_mapping[window_length].values()))
+    feature_timeseries_calculator = next(iter(feature_timeseries_mapping[window_length].values()))
 
     # Return the key information as a dictionary
     return {
@@ -308,7 +247,6 @@ def dictionary_to_string(dictionary: dict) -> str:
 
 def gen_pdf_for_feature_dynamics(
     feature_dynamics_names: List[str],
-    window_length: int,
     output_path: str = "feature_dynamics_interpretation",
 ) -> None:
     """ """
@@ -316,8 +254,7 @@ def gen_pdf_for_feature_dynamics(
         [
             dictionary_to_string(
                 interpret_feature_dynamic(
-                    feature_dynamic=feature_dynamics_name,
-                    window_length=window_length,
+                    feature_dynamic=feature_dynamics_name
                 )
             )
             for feature_dynamics_name in feature_dynamics_names
