@@ -29,7 +29,7 @@ def extract_feature_dynamics(
     column_sort=None,
     column_kind=None,
     column_value=None,
-    **kwargs
+    **kwargs,
 ):
     """ """
     # Validation checks
@@ -75,7 +75,9 @@ def extract_feature_dynamics(
             feature_dynamics_kind_to_fc_parameters_input = None
 
         if window_length == 0:
-            raise ValueError("extract_feature_dynamics() does not support window lengths of zero. Consider using extract_features() instead.")
+            raise ValueError(
+                "extract_feature_dynamics() does not support window lengths of zero. Consider using extract_features() instead."
+            )
 
         X = do_feature_dynamics_extraction(
             timeseries_container,
@@ -88,7 +90,7 @@ def extract_feature_dynamics(
             column_sort=column_sort,
             column_kind=column_kind,
             column_value=column_value,
-            **kwargs
+            **kwargs,
         )
 
         Xs.append(X)
@@ -107,7 +109,7 @@ def do_feature_dynamics_extraction(
     column_sort=None,
     column_kind=None,
     column_value=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Extract feature dynamics from a time series.
@@ -180,7 +182,9 @@ def do_feature_dynamics_extraction(
     """
 
     if not isinstance(window_length, int):
-            raise TypeError(f"Window length needs to be of type int, but was found to be type {type(window_length)}. Currently only integer window lengths are accepted for extracting feature dynamics")
+        raise TypeError(
+            f"Window length needs to be of type int, but was found to be type {type(window_length)}. Currently only integer window lengths are accepted for extracting feature dynamics"
+        )
 
     # TODO: Implement a check which makes sure that the window length is not too large... otherwise there will be weird bugs
     # IMPORTANT TODO ^^^ right now there are no checks on illegal window lengths...
@@ -193,7 +197,6 @@ def do_feature_dynamics_extraction(
         column_value=column_value,
     )
 
-
     if isinstance(ts_data, Iterable):
         split_ts_data = IterableSplitTsData(ts_data, window_length)
     else:
@@ -204,7 +207,7 @@ def do_feature_dynamics_extraction(
         default_fc_parameters=feature_timeseries_fc_parameters,
         kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters,
         **kwargs,
-        pivot=False
+        pivot=False,
     )
 
     column_kind = column_kind or "variable"
@@ -282,7 +285,7 @@ def do_feature_dynamics_extraction(
         column_value=column_value,
         default_fc_parameters=feature_dynamics_fc_parameters,
         kind_to_fc_parameters=feature_dynamics_kind_to_fc_parameters,
-        **kwargs
+        **kwargs,
     )
 
     # Drop all feature dynamics that are associated with at least one NaN.
