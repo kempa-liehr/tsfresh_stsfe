@@ -24,10 +24,13 @@ def extract_feature_dynamics_wrapper(timeseries_container,
                             column_id=None, column_sort=None, column_kind=None, column_value=None,
                             **kwargs):
     """
-    Wrapper for multiple window lengths
+    Wrapper for multiple window lengths, useful for ts_kinds
     """
 
+
     # Split up the window lengths into groups (and also do the same for the feature time series)
+    window_lengths = feature_timeseries_kind_to_fc_parameters.values()
+    print(window_lengths)
 
     # paralellised computation of extracting feature dynamics for a given window length
 

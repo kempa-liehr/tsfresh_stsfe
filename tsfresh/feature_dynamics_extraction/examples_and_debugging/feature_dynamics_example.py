@@ -2,7 +2,7 @@ import dask.dataframe as dd
 import pandas as pd
 import numpy as np
 
-from tsfresh.feature_dynamics_extraction import extract_feature_dynamics
+from tsfresh.feature_dynamics_extraction.feature_dynamics_extraction import extract_feature_dynamics
 from tsfresh.feature_extraction.settings import (
     MinimalFCParameters,
     EfficientFCParameters,

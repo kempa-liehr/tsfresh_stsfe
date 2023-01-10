@@ -1,10 +1,16 @@
 from tsfresh.feature_extraction.settings import from_columns
 from typing import List, Tuple
-import itertools
+from itertools import combinations
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 from typing import List
 from md2pdf.core import md2pdf
+from collections import defaultdict
+import sys
+from tsfresh.feature_extraction import feature_calculators
+from tsfresh.utilities.string_manipulation import get_config_from_string
+
+
 
 
 def generate_feature_name_encoding(feature_names):
@@ -18,10 +24,41 @@ def clean_feature_timeseries_name(feature_timeseries_name:str, window_length: in
     """
     Logic to clean up the feature time series name after the first round of extraction
 
-    NB: This might not be sufficient
+    NB: This might not be sufficient but use this for now
     """
 
-    return feature_timeseries_name.replace("__", f"||window_{window_length}@",1)
+    return feature_timeseries_name.replace("__", "||", 1).replace("__", "|") + f"@window_{window_length}"
+
+
+def parse_feature_dynamic_name(feature_dynamic_full_name):
+    window_length_token = "@"
+    ts_kind_token = "||"
+    param_token = "|"
+    print(feature_dynamic_full_name)
+
+
+    cleaned_feature_dynamic_name = feature_dynamic_full_name.replace(ts_kind_token, "__").replace(param_token, "__").replace(window_length_token, "__")
+    parts = cleaned_feature_dynamic_name.split("__")
+    print(parts)
+
+    window_length = feature_dynamic_full_name.split(window_length_token)[1].split("__")[0]
+    ts_kind = feature_dynamic_full_name.split(ts_kind_token)[0]
+    feature_timeseries_calculator_name = feature_dynamic_full_name.split(ts_kind_token)[1].split(window_length_token)[0]
+    feature_timeseries_calculator_params = 0
+    feature_dynamic_calculator_name = 0
+    feature_dynamic_calculator_params = 0  
+
+
+    return {
+        "feature_dynamic_full_name" : feature_dynamic_full_name,
+        "window_length" : window_length,
+        "ts_kind" : ts_kind,
+        "feature_timeseries_calculator_name": feature_timeseries_calculator_name,
+        "feature_timeseries_calculator_params": feature_timeseries_calculator_params,
+        "feature_dynamic_calculator_name": feature_dynamic_calculator_name,
+        "feature_dynamic_calculator_params": feature_dynamic_calculator_params,
+    }
+
 
 def derive_features_dictionaries(feature_names: List[str]) -> Tuple[dict, dict]:
     """
@@ -36,15 +73,183 @@ def derive_features_dictionaries(feature_names: List[str]) -> Tuple[dict, dict]:
 
     """
 
+    # TODO: NEEDS A HUGE CLEANUP!!!
+
     assert bool(feature_names) and all(
         isinstance(feature_name, str) for feature_name in feature_names
     )
 
-    replacement_token = "||"
-    feature_dynamics_mapping = from_columns(feature_names)
+
+
+    # Tokens for ts_kind separator 
+    # and the param separator 
+    # and the feature timeseries window_length separator 
+    ts_kind_token = "||"
+    param_token = "|"
+    window_length_token = "@"
+
+    # TODO: Map window length to ts_kind_dictionary
+    # TODO: Map ts_kind to feature timeseries calculators
+    # TODO: Map feature_timeseries's to feature dynamics calculators
+    fts_mapping = {}  # window_length ---> ts_kind ---> feature calcs
+    fd_mapping = {} # feature_timeseries name with window_length --> feature dynamics calcs
+
+    # Then function does for window_length, {ts_kind--->fts calculator}: extract_features(...)
+    print(feature_names)
+    for full_feature_name in feature_names:
+
+        if not isinstance(full_feature_name, str):
+            raise TypeError("Column name {} should be a string or unicode".format(full_feature_name))
+
+        # Split according to our separator into <col_name>, <feature_name>, <feature_params> <window_length>
+        fts_parts = full_feature_name.split("__")[0].replace(ts_kind_token, "__").replace(param_token, "__").replace(window_length_token, "__").split("__")
+        n_fts_parts = len(fts_parts)
+
+        if n_fts_parts == 1:
+            raise ValueError(
+                "Splitting of columnname {} resulted in only one part.".format(full_feature_name)
+            )
+
+        # split up into parts
+        fd_parts = full_feature_name.split("__")
+        n_fd_parts = len(fd_parts)
+
+        if n_fd_parts == 1:
+            raise ValueError(
+                "Splitting of columnname {} resulted in only one part.".format(full_feature_name)
+            )
+
+
+        feature_timeseries_name = fd_parts[0]
+        feature_dynamics_name = fd_parts[1]
+
+        if feature_timeseries_name not in fd_mapping:
+            fd_mapping[feature_timeseries_name] = {}
+
+        if not hasattr(feature_calculators, feature_dynamics_name):
+            raise ValueError("Unknown feature name {}".format(feature_dynamics_name))
+
+        fd_config = get_config_from_string(fd_parts)
+        if fd_config:
+            if feature_dynamics_name in fd_mapping[feature_timeseries_name]:
+                fd_mapping[feature_timeseries_name][feature_dynamics_name].append(fd_config)
+            else:
+                fd_mapping[feature_timeseries_name][feature_dynamics_name] = [fd_config]
+        else:
+            fd_mapping[feature_timeseries_name][feature_dynamics_name] = None
+
+
+
+        kind = fts_parts[0]
+        feature_ts_name = fts_parts[1]
+        window_length_full_name = fts_parts[-1]
+        window_length = int(fts_parts[-1].replace("window_", ""))
+        fts_parts.remove(window_length_full_name)
+
+        # Window length mapping
+        if window_length not in fts_mapping:
+            fts_mapping[window_length] = {}
+
+        if kind not in fts_mapping[window_length]:
+            fts_mapping[window_length][kind] = {}       
+
+        if not hasattr(feature_calculators, feature_ts_name):
+            raise ValueError("Unknown feature name {}".format(feature_ts_name))
+
+        config = get_config_from_string(fts_parts)
+        if config:
+            if feature_ts_name in fts_mapping[window_length][kind]:
+                if config not in fts_mapping[window_length][kind][feature_ts_name]:
+                    fts_mapping[window_length][kind][feature_ts_name].append(config)
+            else:
+                fts_mapping[window_length][kind][feature_ts_name] = [config]
+        else:
+            fts_mapping[window_length][kind][feature_ts_name] = None
+        
+    print("parsed fts mapping")
+    print(fts_mapping)
+    print("parsed fd mapping")
+    print(fd_mapping)
+
+
+        
+        
+        # print("Feature name")
+        # print(feature_name)
+        # window_length = feature_name.split(window_length_token)[1].split("__")[0]
+        # print("Window")
+        # print(window_length)
+        # print("ts_kind")
+        # ts_kind = feature_name.split(ts_kind_token)[0]
+        # print(ts_kind)
+        # print("Feature Time Series Calculator mapping (ts_kind --> feature calculator)")
+        # feature_timeseries_calculator_mapping = from_columns([feature_name.split(window_length_token)[0].replace(ts_kind_token, "__").replace(param_token, "__")])
+        # print(feature_timeseries_calculator_mapping)
+        # feature_dynamics_calculator_mapping = from_columns([feature_name])
+        # print(feature_dynamics_calculator_mapping)
+
+
+    # Clean feature names
+    #feature_names_cleaned = [str(name).replace(ts_kind_token, "__").replace(param_token, "__") for name in feature_names]
+    
+    #print(feature_names_cleaned)
+
+
+    
+
+    # Get a mapping that maps from window to ts_kind to feature timeseries
+    #print(feature_names)
+    #print("CHUR FUCK")
+    #x = {window_length : from_columns([str(x).replace(ts_kind_token,"__").replace(param_token, "__") for x in ])}
+
     feature_timeseries_mapping = from_columns(
-        [str(x).replace(replacement_token, "__") for x in [*feature_dynamics_mapping]]
+        [str(x).replace(ts_kind_token, "__").replace(param_token, "__").split("@")[0] for x in feature_names]
     )
+
+    #print(feature_timeseries_mapping)
+
+
+    # Get a mapping that maps from feature_timeseries to feature dynamics
+
+    # Get a mapping that maps (feature_timeseries, window_length) combos to feature_dynamics
+    feature_dynamics_mapping = {
+        tuple(
+            feature_timeseries_and_window_length.split(window_length_token)
+        ): feature_dynamic
+        for (feature_timeseries_and_window_length, feature_dynamic) in from_columns(
+            feature_names
+        ).items()
+    }
+
+    # Get a mapping that maps ts_kinds to (feature_timeseries, window_length) combos
+    # This is fucking wrong...    
+    def merge_dictionaries(*dictionaries):
+        dd = defaultdict(list)
+        for d in dictionaries:
+            for key, value in d.items():
+                dd[key].append(value)
+        return dict(dd)
+    
+    feature_timeseries_mapping = merge_dictionaries(
+            *[
+                {
+                    ts_kind: (fts, feature_timeseries_window)
+                    for (ts_kind, fts) in from_columns(
+                        [
+                            feature_timeseries_name.replace(ts_kind_token, "__").replace(
+                                param_token, "__"
+                            )
+                        ]
+                    ).items()
+                }
+                for feature_timeseries_name, feature_timeseries_window in feature_dynamics_mapping.keys()
+            ]
+        )
+
+    print("surely")
+    print(feature_timeseries_mapping)
+    
+
     return feature_timeseries_mapping, feature_dynamics_mapping
 
 def engineer_input_timeseries(
@@ -78,7 +283,7 @@ def engineer_input_timeseries(
             len(ts_kinds) > 1
         ), "Can only difference `ts` if there is more than one series"
 
-        combs = itertools.combinations(ts_kinds, r=2)
+        combs = combinations(ts_kinds, r=2)
         for first_ts_kind, second_ts_kind in combs:
             ts["D_" + first_ts_kind + second_ts_kind] = (
                 ts[first_ts_kind] - ts[second_ts_kind]
@@ -108,22 +313,29 @@ def engineer_input_timeseries(
     
 
 
-def interpret_feature_dynamic(feature_dynamic: str, window_length: int) -> dict:
+def interpret_feature_dynamic(feature_dynamic: str) -> dict:
     """
-    TODO: Fix for new feature naming convention
+    
     """
     assert isinstance(feature_dynamic, str)
 
+    # Generate the dictionaries that describe the information
     feature_timeseries_mapping, feature_dynamics_mapping = derive_features_dictionaries(
         feature_names=[feature_dynamic]
     )
 
+    # Derive the key information that parameterises the feature name
+    input_timeseries = next(iter(feature_timeseries_mapping.keys()))
+    feature_dynamic_calculator = next(iter(feature_dynamics_mapping.values()))
+    feature_timeseries_calculator, window_length = list(feature_timeseries_mapping.values())[0]
+
+    # Return the key information as a dictionary
     return {
         "Full Feature Dynamic Name": feature_dynamic,
-        "Input Timeseries": list(feature_timeseries_mapping.keys())[0],
-        "Feature Timeseries Calculator": list(feature_timeseries_mapping.values())[0],
+        "Input Timeseries": input_timeseries,
+        "Feature Timeseries Calculator": feature_timeseries_calculator,
         "Window Length": window_length,
-        "Feature Dynamic Calculator": list(feature_dynamics_mapping.values())[0],
+        "Feature Dynamic Calculator": feature_dynamic_calculator,
     }
 
 
