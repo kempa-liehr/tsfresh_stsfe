@@ -9,14 +9,6 @@ from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
 
 
-def generate_feature_name_encoding(feature_names):
-    """
-    returns a dictionary which maps encoded feature
-    names to their long full feature names
-    """
-    pass
-
-
 def clean_feature_timeseries_name(
     feature_timeseries_name: str, window_length: int
 ) -> str:
@@ -24,19 +16,24 @@ def clean_feature_timeseries_name(
     Logic to clean up the feature time series name after the first round of extraction
     including adding the window length information into the feature timeseries name
     """
-
+    ts_kind_token = "||"
+    feature_timeseries_parameter_token = "|"
     return (
-        feature_timeseries_name.replace("__", "||", 1).replace("__", "|")
+        feature_timeseries_name.replace("__", ts_kind_token, 1).replace("__", feature_timeseries_parameter_token)
         + f"@window_{window_length}"
     )
 
 
 def update_feature_dictionary(feature_dictionary, window_length, feature_parts):
     """
-    Adds an entry into a feature calculator dictionary, including the window length
-    information.
-    Assume parts is kind, feature_name, *feature_params
-    Adds entries to a feature calculator dictionary
+    Adds a single entry into a feature calculator dictionary. 
+    
+    This dictionary includes the window length information i.e. the dictionary
+    maps:
+    window_length ----> ts_kind ---> name_of_feature_calc ---> feature_calc_params`
+
+    This function assumes that `feature_parts` is organised like:
+    kind, feature_name, *feature_params
     """
 
     ts_kind = feature_parts[0]
@@ -64,10 +61,22 @@ def update_feature_dictionary(feature_dictionary, window_length, feature_parts):
     return feature_dictionary
 
 
-def parse_feature_timeseries_parts(full_feature_name):
+def parse_feature_timeseries_parts(full_feature_name:str) -> dict:
     """ 
-    
-    NB: Also handles the case where the window length is zero... i.e. vanilla features
+    Generates the feature timeseries (fts) parts from a full feature dynamic (fd) name
+
+    i.e. given a ful feature dynamic name like: 
+    <ts_kind>||<fts_name>|<fts_params>@<window_length>__<fd_name>__<fd_params>
+
+    Then this function will return a dictionary with two keys:
+    1) window_length, an integer
+    2) fts_parts, a list containing: 
+    [
+        <ts_kind>,
+        <fts_name>,
+        <fts_params>*
+    ] 
+    (where multiple fts_params are allowed and are each a separate element)
     """
 
     ts_kind_token = "||"
@@ -89,7 +98,7 @@ def parse_feature_timeseries_parts(full_feature_name):
         )
         
     else:
-        # remove window length information from ts_parts
+        # remove window length information from ts_parts and store separately
         window_length = int(fts_parts[-1].replace("window_", ""))
         fts_parts = fts_parts[:-1]
 
@@ -105,6 +114,21 @@ def parse_feature_timeseries_parts(full_feature_name):
 
 
 def parse_feature_dynamics_parts(full_feature_name):
+    """
+    Generates the feature dynamics (fd) parts from a full feature dynamic (fd) name
+
+    i.e. given a full feature dynamic name like: 
+    <ts_kind>||<fts_name>|<fts_params>@<window_length>__<fd_name>__<fd_params>
+
+    Then this function will return a dictionary with one key:
+    1) fd_parts, a list containing:
+    [
+        <ts_kind>||<fts_name>|<fts_params>@<window_length>, 
+        <fd_name>, 
+        <fd_params>*
+    ] 
+    (where multiple fd_params are allowed and are each a separate element)
+    """
     # Split according to our separator into <col_name>, <feature_name>, <feature_params>
     fd_parts = full_feature_name.split("__")
     n_fd_parts = len(fd_parts)
@@ -123,17 +147,18 @@ def derive_features_dictionaries(feature_names: List[str]) -> Tuple[dict, dict]:
 
         params:
             feature_names (list of str): the relevant feature names in the form of:
-            <ts_kind>||<feature_time_series>|<feature_times_series_params>@<window_length>__<feature_dynamics>__<feature_dynamics_params>
+            <ts_kind>||<feature_time_series>|<feature_times_series_params>@<window_length>__<feature_dynamic_name>__<feature_dynamics_params>
 
         returns:
-            fts_mapping (dict): The feature calculators used to compute the feature time-series on the input time-series
-            fd_mapping (dict): The feature calculators used to compute the feature dynamics on the feature time-series
-            # NB: Talk about how it maps window_length ---> column ---> calcs
+            fts_mapping (dict): The mapping used to compute the feature time-series on the ts kinds.
+            fd_mapping (dict): The mapping used to compute the feature dynamics on the feature time series.
+
+            The fts and fd mappings map window_lengths to a dictionary of column names (either 
+            ts_kinds names or fts names) which map to a dictionary of feature calculators. 
+            i.e. window_length ---> column_name ---> feature_calculator_name ---> [*feature_calculator_params]
 
     """
-    # window_length ---> ts_kind ---> feature calcs
     fts_mapping = {}
-    # window_length ---> feature_timeseries name --> feature dynamics calcs
     fd_mapping = {}
 
     for full_feature_name in feature_names:
@@ -171,10 +196,16 @@ def engineer_input_timeseries(
 
     params:
          ts (pd.DataFrame): The pandas.DataFrame with the time series to compute the features for.
-         compute_differences_within_series (bool): Temporal differences
-         compute_differences_between_series (bool): Differences between two timeseries
+         compute_differences_within_series (bool): Differences within the same timeseries. 
+         The first value is always set to zero i.e. f([1,5,2,6]) = [0,4,-3,4]
+         compute_differences_between_series (bool): Differences between two different timeseries.
+         i.e. f([1,2,3,4],[4,3,2,1]) = [3,1,-1,-3]
          column_id (str): The name of the id column to group by. Please see :ref:`data-formats-label`.
          column_sort (str): The name of the sort column. Please see :ref:`data-formats-label`.
+
+    returns:
+         Returns the original dataframe with the engineered timeseries added as new columns
+        
     """
 
     def series_differencing(ts: pd.DataFrame, ts_kinds: List[str]) -> pd.DataFrame:
@@ -218,7 +249,23 @@ def engineer_input_timeseries(
 
 
 def interpret_feature_dynamic(feature_dynamic: str) -> dict:
-    """ """
+    """
+    Breaks up a full feature dynamic name into its constituent parts.
+
+    It turns a complex full feature dynamic (fd) name:
+    <ts_kind>||<fts_name>|<fts_params*>@<window_length>__<fd_name>__<fd_params>
+
+    Into a dictionary containing each part, including the full original name
+
+    {
+        "Full Feature Dynamic Name" : <ts_kind>||<fts_name>|<fts_params*>@<window_length>__<fd_name>__<fd_params>,
+        "Input Timeseries": <ts_kind>,
+        "Feature Timeseries Calculator": {<fts_name> : [*<fts_params>]},
+        "Window Length": <window_length>,
+        "Feature Dynamic Calculator": {<fd_name> : [*<fd_params>]},
+    }
+
+    """
     assert isinstance(feature_dynamic, str)
 
     # Generate the dictionaries that describe the information
@@ -247,6 +294,10 @@ def interpret_feature_dynamic(feature_dynamic: str) -> dict:
 
 
 def dictionary_to_string(dictionary: dict) -> str:
+    """
+    Formats a dictionary as a string, where the
+    keys are bolded and values are italicised
+    """
     formatted_output = ""
     for key, value in dictionary.items():
         formatted_output += f"**{key}** : ```{value}```<br>"
@@ -257,7 +308,10 @@ def gen_pdf_for_feature_dynamics(
     feature_dynamics_names: List[str],
     output_path: str = "feature_dynamics_interpretation",
 ) -> None:
-    """ """
+    """
+    Given a list of full feature dynamics names, write these
+    names and their interpretations to PDF and markdown documents     
+    """
     feature_dynamics_summary = "<br/><br/><br/>".join(
         [
             dictionary_to_string(
