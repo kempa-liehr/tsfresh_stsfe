@@ -1,3 +1,4 @@
+import itertools
 from collections import defaultdict, namedtuple
 from typing import Iterable, Sized
 
@@ -7,6 +8,7 @@ try:
     from dask import dataframe as dd
 except ImportError:  # pragma: no cover
     dd = None
+
 
 def _binding_helper(f, kwargs, column_sort, column_id, column_kind, column_value):
     def wrapped_feature_extraction(x):
@@ -95,25 +97,6 @@ class PartitionedTsData(Iterable[Timeseries], Sized, TsData):
         return_df = return_df.sort_index()
 
         return return_df
-
-    def __len__(self):
-        """Override in a subclass"""
-        raise NotImplementedError
- 
-    def __iter__(self):
-         """Override in a subclass"""
-         raise NotImplementedError
-
-
-class ApplyableTsData(TsData):
-    """
-    TsData base class to use, if an iterable ts data can not be used.
-    Its only interface is an apply function, which should be applied
-    to each of the chunks of the data. How this is done
-    depends on the implementation.
-    """
-    def apply(self, f, **kwargs):
-        raise NotImplementedError
 
 
 def _check_colname(*columns):

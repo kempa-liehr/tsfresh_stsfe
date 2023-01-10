@@ -15,7 +15,6 @@ from collections.abc import Generator, Iterable
 from functools import partial
 from itertools import islice, repeat, takewhile
 from multiprocessing import Pool
-from itertools import takewhile, islice, repeat
 
 from tqdm import tqdm
 

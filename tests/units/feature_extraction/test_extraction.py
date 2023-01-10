@@ -15,7 +15,6 @@ from tsfresh.feature_extraction.settings import (
     ComprehensiveFCParameters,
     PickableSettings,
 )
-from tsfresh.feature_extraction.feature_calculators import set_property
 from tsfresh.utilities.distribution import IterableDistributorBaseClass, MapDistributor
 
 
@@ -169,11 +168,10 @@ class ExtractionTestCase(DataTestCase):
             sorted(extracted_features.index.unique().tolist()),
             sorted(df["id"].unique().tolist()),
         )
-    
+
     def test_extract_features_custom_function(self):
         df = self.create_test_data_sample()
 
-        @set_property("fctype", "simple")
         def custom_function(x, p):
             return len(x) + p
 

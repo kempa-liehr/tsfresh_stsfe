@@ -9,7 +9,7 @@ import logging
 import warnings
 from collections.abc import Iterable
 
-import numpy as np
+import pandas as pd
 
 from tsfresh import defaults
 from tsfresh.feature_extraction import feature_calculators
@@ -360,7 +360,7 @@ def _do_extraction_on_chunk(
             else:
                 x = data.values
 
-            if func.fctype == "combiner":
+            if getattr(func, "fctype", None) == "combiner":
                 result = func(x, param=parameter_list)
             else:
                 if parameter_list:
@@ -377,4 +377,10 @@ def _do_extraction_on_chunk(
                     feature_name += "__" + str(key)
                 yield (sample_id, feature_name, item)
 
-    return list(_f())
+    with warnings.catch_warnings():
+        if not show_warnings:
+            warnings.simplefilter("ignore")
+        else:
+            warnings.simplefilter("default")
+
+        return list(_f())
