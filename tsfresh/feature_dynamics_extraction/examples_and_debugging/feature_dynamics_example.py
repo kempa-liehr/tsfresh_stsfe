@@ -11,7 +11,6 @@ from tsfresh.feature_extraction.settings import (
 )
 from tsfresh.feature_selection import select_features
 
-# Not in tsfresh published package yet
 from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
     derive_features_dictionaries,
     gen_pdf_for_feature_dynamics,
@@ -19,6 +18,7 @@ from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
 )
 
 # NOTE: The intent of this file is NOT to be a test suite but more of a "debug playground"
+# NOTE: This will be converted into a proper formal software test (unit test or maybe an integration test) shortly
 
 
 def gen_example_timeseries_data(container_type="pandas"):
