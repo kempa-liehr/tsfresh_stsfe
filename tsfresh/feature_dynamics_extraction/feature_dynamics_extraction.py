@@ -8,9 +8,6 @@ from collections.abc import Iterable
 from dask import dataframe as dd
 import pandas as pd
 
-import sys
-
-
 from tsfresh.feature_extraction.extraction import extract_features
 from tsfresh.feature_dynamics_extraction.feature_dynamics_data import (
     IterableSplitTsData,
@@ -22,7 +19,7 @@ from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
 )
 
 
-def extract_feature_dynamics_wrapped(
+def extract_feature_dynamics(
     timeseries_container,
     feature_timeseries_fc_parameters=None,
     feature_timeseries_kind_to_fc_parameters=None,
@@ -44,53 +41,71 @@ def extract_feature_dynamics_wrapped(
     else:
         fts_dictionary_to_iterate = feature_timeseries_fc_parameters
 
-
     Xs = []
     for window_length in fts_dictionary_to_iterate.keys():
 
         # Assign dictionaries
         if feature_timeseries_fc_parameters is not None:
-            feature_timeseries_fc_parameters_input = feature_timeseries_fc_parameters[window_length]  
+            feature_timeseries_fc_parameters_input = feature_timeseries_fc_parameters[
+                window_length
+            ]
         else:
             feature_timeseries_fc_parameters_input = None
 
         if feature_timeseries_kind_to_fc_parameters is not None:
-            feature_timeseries_kind_to_fc_parameters_input = feature_timeseries_kind_to_fc_parameters[window_length]  
+            feature_timeseries_kind_to_fc_parameters_input = (
+                feature_timeseries_kind_to_fc_parameters[window_length]
+            )
         else:
             feature_timeseries_kind_to_fc_parameters_input = None
 
         if feature_dynamics_fc_parameters is not None:
-            feature_dynamics_fc_parameters_input = feature_dynamics_fc_parameters[window_length]  
+            feature_dynamics_fc_parameters_input = feature_dynamics_fc_parameters[
+                window_length
+            ]
         else:
             feature_dynamics_fc_parameters_input = None
 
         if feature_dynamics_kind_to_fc_parameters is not None:
-            feature_dynamics_kind_to_fc_parameters_input = feature_dynamics_kind_to_fc_parameters[window_length]  
+            feature_dynamics_kind_to_fc_parameters_input = (
+                feature_dynamics_kind_to_fc_parameters[window_length]
+            )
         else:
             feature_dynamics_kind_to_fc_parameters_input = None
 
-        X = extract_feature_dynamics(
-            timeseries_container,
-            window_length=window_length,
-            feature_timeseries_fc_parameters=feature_timeseries_fc_parameters_input,
-            feature_timeseries_kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters_input,
-            feature_dynamics_fc_parameters=feature_dynamics_fc_parameters_input,
-            feature_dynamics_kind_to_fc_parameters=feature_dynamics_kind_to_fc_parameters_input,
-            column_id=column_id,
-            column_sort=column_sort,
-            column_kind=column_kind,
-            column_value=column_value,
-            **kwargs
-        )
+        if window_length == 0:
+            X = extract_features(
+                timeseries_container,
+                default_fc_parameters=feature_timeseries_fc_parameters_input,
+                kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters_input,
+                column_id=column_id,
+                column_sort=column_sort,
+                column_kind=column_kind,
+                column_value=column_value,
+                **kwargs
+            )
+
+        else:
+            X = do_feature_dynamics_extraction(
+                timeseries_container,
+                window_length=window_length,
+                feature_timeseries_fc_parameters=feature_timeseries_fc_parameters_input,
+                feature_timeseries_kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters_input,
+                feature_dynamics_fc_parameters=feature_dynamics_fc_parameters_input,
+                feature_dynamics_kind_to_fc_parameters=feature_dynamics_kind_to_fc_parameters_input,
+                column_id=column_id,
+                column_sort=column_sort,
+                column_kind=column_kind,
+                column_value=column_value,
+                **kwargs
+            )
 
         Xs.append(X)
-        
 
     return pd.concat(Xs, axis=1)
-    
 
 
-def extract_feature_dynamics(
+def do_feature_dynamics_extraction(
     timeseries_container,
     window_length=None,
     feature_timeseries_fc_parameters=None,
@@ -176,9 +191,6 @@ def extract_feature_dynamics(
     # TODO: Add assert that ensures window length conforms with the size of the data
     # TODO: Add assert that timeseries is long enough for feature dynamics
 
-    # ts_kind mapping does window_length --> ts_kind --> f_calcs
-    # ts_fc mapping does f_calcs coupled with a list
-
     ts_data = to_tsdata(
         timeseries_container,
         column_id=column_id,
@@ -212,6 +224,7 @@ def extract_feature_dynamics(
     # as the return type is not a list, but already a dataframe.
     # We also need to drop values that contain NaNs.
     if isinstance(feature_timeseries, dd.DataFrame):
+
         feature_timeseries = feature_timeseries.reset_index(drop=True)
 
         feature_timeseries[column_kind] = feature_timeseries[column_kind].apply(
@@ -227,27 +240,19 @@ def extract_feature_dynamics(
         )
 
         # Need to drop features for all windows which contain at least one NaN
-        target_list = (
+        null_columns = (
             feature_timeseries[feature_timeseries[column_value].isnull()][column_kind]
             .unique()
             .compute()
         )
         feature_timeseries = feature_timeseries[
-            ~feature_timeseries[column_kind].isin(target_list)
+            ~feature_timeseries[column_kind].isin(null_columns)
         ]
+
     else:
         feature_timeseries = pd.DataFrame(
             feature_timeseries, columns=[column_id, column_kind, column_value]
         )
-
-        # Need to drop features for all windows which contain at least one NaN
-        target_list = feature_timeseries[feature_timeseries[column_value].isnull()][
-            column_kind
-        ].unique()
-
-        feature_timeseries = feature_timeseries[
-            ~feature_timeseries[column_kind].isin(target_list)
-        ]
 
         feature_timeseries[column_kind] = feature_timeseries[column_kind].apply(
             lambda col: clean_feature_timeseries_name(col, window_length)
@@ -260,6 +265,15 @@ def extract_feature_dynamics(
         feature_timeseries[column_id] = feature_timeseries[column_id].apply(
             lambda x: x[0]
         )
+
+        # Need to drop features for all windows which contain at least one NaN
+        null_columns = feature_timeseries[feature_timeseries[column_value].isnull()][
+            column_kind
+        ].unique()
+
+        feature_timeseries = feature_timeseries[
+            ~feature_timeseries[column_kind].isin(null_columns)
+        ]
 
     # Coerce time series values, which include boolean values, integers, and floats, which are
     # currently stored as dtype: "object" into floats.

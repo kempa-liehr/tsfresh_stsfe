@@ -4,7 +4,6 @@ import numpy as np
 
 from tsfresh.feature_dynamics_extraction.feature_dynamics_extraction import (
     extract_feature_dynamics,
-    extract_feature_dynamics_wrapped,
 )
 from tsfresh.feature_extraction.settings import (
     MinimalFCParameters,
@@ -414,10 +413,10 @@ if __name__ == "__main__":
 
     print(f"\nTime series input:\n\n{ts}")
     print(f"\nTime series response vector:\n\n{response}")
-    window_length_1 = 3
+    window_length_1 = 0
     window_length_2 = 4
 
-    X = extract_feature_dynamics_wrapped(
+    X = extract_feature_dynamics(
         timeseries_container=ts,
         n_jobs=0,
         feature_timeseries_fc_parameters={
@@ -443,7 +442,6 @@ if __name__ == "__main__":
 
         # Now get names of the features
         rel_feature_names = list(X_filtered.columns)
-        print(f"\nRelevant feature names:\n\n{rel_feature_names}")
 
         # Now generate a dictionary(s) to extract JUST these features
         feature_time_series_dict, feature_dynamics_dict = derive_features_dictionaries(
@@ -452,13 +450,13 @@ if __name__ == "__main__":
 
         # interpret feature dynamics
         if config["Explain Features with pdf"]:
-            subset_of_rel_feature_names = rel_feature_names[0:5]
+            subset_of_rel_feature_names = rel_feature_names[0:100]
             gen_pdf_for_feature_dynamics(
                 feature_dynamics_names=subset_of_rel_feature_names,
             )
 
         if config["Extract On Selected"]:
-            X = extract_feature_dynamics_wrapped(
+            X = extract_feature_dynamics(
                 timeseries_container=ts,
                 n_jobs=0,
                 feature_timeseries_kind_to_fc_parameters=feature_time_series_dict,

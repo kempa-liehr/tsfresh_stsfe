@@ -24,8 +24,7 @@ def clean_feature_timeseries_name(
 ) -> str:
     """
     Logic to clean up the feature time series name after the first round of extraction
-
-    NB: This might not be sufficient but use this for now
+    including adding the window length information into the feature timeseries name
     """
 
     return (
@@ -36,7 +35,9 @@ def clean_feature_timeseries_name(
 
 def update_feature_dictionary(feature_dictionary, window_length, feature_parts):
     """
-    Assume parts is kind, feature_name, feature_params
+    Adds an entry into a feature calculator dictionary, including the window length
+    information.
+    Assume parts is kind, feature_name, *feature_params
     Adds entries to a feature calculator dictionary
     """
 
@@ -225,8 +226,12 @@ def interpret_feature_dynamic(feature_dynamic: str) -> dict:
     # Derive the key information that parameterises the feature name
     window_length = next(iter(feature_timeseries_mapping.keys()))
     input_timeseries = next(iter(feature_timeseries_mapping[window_length].keys()))
-    feature_dynamic_calculator = next(iter(feature_dynamics_mapping[window_length].values()))
-    feature_timeseries_calculator = next(iter(feature_timeseries_mapping[window_length].values()))
+    feature_dynamic_calculator = next(
+        iter(feature_dynamics_mapping[window_length].values())
+    )
+    feature_timeseries_calculator = next(
+        iter(feature_timeseries_mapping[window_length].values())
+    )
 
     # Return the key information as a dictionary
     return {
@@ -253,9 +258,7 @@ def gen_pdf_for_feature_dynamics(
     feature_dynamics_summary = "<br/><br/><br/>".join(
         [
             dictionary_to_string(
-                interpret_feature_dynamic(
-                    feature_dynamic=feature_dynamics_name
-                )
+                interpret_feature_dynamic(feature_dynamic=feature_dynamics_name)
             )
             for feature_dynamics_name in feature_dynamics_names
         ]
