@@ -62,10 +62,7 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
             window_length_1: {
                 feature_parts_1[0]: {
                     feature_parts_1[1]: [
-                        {"f_agg": "var",
-                        "isabs": False,
-                        "qh": 0.2,
-                        "ql": 0.0}
+                        {"f_agg": "var", "isabs": False, "qh": 0.2, "ql": 0.0}
                     ]
                 }
             }
@@ -83,8 +80,8 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
             dictionary_2, window_length_2, feature_parts_2
         )
         expected_updated_dictionary_2 = {
-            4: {'y': {'change_quantiles': [{'f_agg': "var"}]}},
-            10: {'y': {'change_quantiles': [{'isabs': False}, {'qh': 0.2}]}},
+            4: {"y": {"change_quantiles": [{"f_agg": "var"}]}},
+            10: {"y": {"change_quantiles": [{"isabs": False}, {"qh": 0.2}]}},
         }
         self.assertTrue(updated_dictionary_2 == expected_updated_dictionary_2)
 
@@ -120,7 +117,9 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         # Add a new ts kind to dictionary 4
         feature_parts_4 = ["z", "permutation_entropy", "dimension_5", "tau_1"]
         updated_dictionary_5 = update_feature_dictionary(
-            expected_updated_dictionary_4,  window_length = 4, feature_parts = feature_parts_4
+            expected_updated_dictionary_4,
+            window_length=4,
+            feature_parts=feature_parts_4,
         )
         expected_updated_dictionary_5 = {
             4: {
@@ -140,28 +139,260 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         # Check similar and identical params are handled correctly
         dictionary_to_repeatedly_mutate = {}
         window_length_4 = 1
-        feature_parts_5 = ['y', 'change_quantiles', 'dimension_5', 'tau_1']
-        feature_parts_6 = ['y', 'change_quantiles', 'dimension_5', 'tau_1',"qh_0.2"] 
+        feature_parts_5 = ["y", "change_quantiles", "dimension_5", "tau_1"]
+        feature_parts_6 = ["y", "change_quantiles", "dimension_5", "tau_1", "qh_0.2"]
         for feature_parts_n in [feature_parts_5, feature_parts_6]:
-            dictionary_to_repeatedly_mutate = update_feature_dictionary(dictionary_to_repeatedly_mutate, window_length_4, feature_parts_n)
-        expected_dictionary_to_repeatedly_mutate = {1 : {'y':{'change_quantiles': [{'dimension': 5, 'tau': 1}, {'dimension': 5, 'tau': 1, 'qh': 0.2}]}}}
-        self.assertTrue(dictionary_to_repeatedly_mutate == expected_dictionary_to_repeatedly_mutate)
+            dictionary_to_repeatedly_mutate = update_feature_dictionary(
+                dictionary_to_repeatedly_mutate, window_length_4, feature_parts_n
+            )
+        expected_dictionary_to_repeatedly_mutate = {
+            1: {
+                "y": {
+                    "change_quantiles": [
+                        {"dimension": 5, "tau": 1},
+                        {"dimension": 5, "tau": 1, "qh": 0.2},
+                    ]
+                }
+            }
+        }
+        self.assertTrue(
+            dictionary_to_repeatedly_mutate == expected_dictionary_to_repeatedly_mutate
+        )
 
-        # Test giving it an illegal feature name...
-        # Test giving it weird window length
-        # Tets giving it a duplicate feature
+        # TODO: Test giving it an illegal feature name...
+        # TODO: Test giving it weird window length
+        # TODO: Test giving it a duplicate feature
 
     def test_parse_feature_timeseries_parts(self):
-        assert True
+        full_feature_names_inputs = (
+            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
+            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
+            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
+            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
+            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
+            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
+        )
+        expected_fts_parts_outputs = (
+            {"window_length": 10, "fts_parts": ["x", "ratio_beyond_r_sigma", "r_2"]},
+            {
+                "window_length": 200,
+                "fts_parts": ["y", "variance_larger_than_standard_deviation"],
+            },
+            {
+                "window_length": 800,
+                "fts_parts": ["z", "permutation_entropy", "dimension_5", "tau_1"],
+            },
+            {"window_length": 10, "fts_parts": ["x", "value_count", "value_1"]},
+            {
+                "window_length": 20,
+                "fts_parts": ["y", "time_reversal_asymmetry_statistic", "lag_3"],
+            },
+            {
+                "window_length": 5,
+                "fts_parts": ["x", "ratio_value_number_to_time_series_length"],
+            },
+        )
+        actual_fts_parts_outputs = tuple(
+            parse_feature_timeseries_parts(full_feature_name)
+            for full_feature_name in full_feature_names_inputs
+        )
+        self.assertTrue(expected_fts_parts_outputs == actual_fts_parts_outputs)
+
+        # TODO: Test some stuff that should fail
 
     def test_parse_feature_dynamics_parts(self):
-        assert True
+
+        full_feature_names_inputs = (
+            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
+            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
+            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
+            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
+            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
+            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
+        )
+        expected_fd_parts_outputs = (
+            {
+                "fd_parts": [
+                    "x||ratio_beyond_r_sigma|r_2@window_10",
+                    "energy_ratio_by_chunks",
+                    "num_segments_10",
+                    "segment_focus_3",
+                ]
+            },
+            {
+                "fd_parts": [
+                    "y||variance_larger_than_standard_deviation@window_200",
+                    "lempel_ziv_complexity",
+                    "bins_5",
+                ]
+            },
+            {
+                "fd_parts": [
+                    "z||permutation_entropy|dimension_5|tau_1@window_800",
+                    "symmetry_looking",
+                    "r_0.35000000000000003",
+                ]
+            },
+            {
+                "fd_parts": [
+                    "x||value_count|value_1@window_10",
+                    "change_quantiles",
+                    'f_agg_"var"',
+                    "isabs_False",
+                    "qh_0.8",
+                    "ql_0.4",
+                ]
+            },
+            {
+                "fd_parts": [
+                    "y||time_reversal_asymmetry_statistic|lag_3@window_20",
+                    "fft_coefficient",
+                    'attr_"imag"',
+                    "coeff_1",
+                ]
+            },
+            {
+                "fd_parts": [
+                    "x||ratio_value_number_to_time_series_length@window_5",
+                    "range_count",
+                    "max_1",
+                    "min_-1",
+                ]
+            },
+        )
+        full_feature_names_outputs = tuple(
+            parse_feature_dynamics_parts(full_feature_name_input)
+            for full_feature_name_input in full_feature_names_inputs
+        )
+        self.assertTrue(full_feature_names_outputs == expected_fd_parts_outputs)
+
+        # TODO: Potentially add some more tests to validate
 
     def test_derive_features_dictionaries(self):
-        assert True
+        full_feature_names_inputs = (
+            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
+            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
+            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
+            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
+            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
+            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
+        )
+
+        fts_dict, fd_dict = derive_features_dictionaries(full_feature_names_inputs)
+
+        expected_fts_dict = {
+            10: {
+                "x": {"ratio_beyond_r_sigma": [{"r": 2}], "value_count": [{"value": 1}]}
+            },
+            200: {"y": {"variance_larger_than_standard_deviation": None}},
+            800: {"z": {"permutation_entropy": [{"dimension": 5, "tau": 1}]}},
+            20: {"y": {"time_reversal_asymmetry_statistic": [{"lag": 3}]}},
+            5: {"x": {"ratio_value_number_to_time_series_length": None}},
+        }
+        expected_fd_dict = {
+            10: {
+                "x||ratio_beyond_r_sigma|r_2@window_10": {
+                    "energy_ratio_by_chunks": [{"num_segments": 10, "segment_focus": 3}]
+                },
+                "x||value_count|value_1@window_10": {
+                    "change_quantiles": [
+                        {"f_agg": "var", "isabs": False, "qh": 0.8, "ql": 0.4}
+                    ]
+                },
+            },
+            200: {
+                "y||variance_larger_than_standard_deviation@window_200": {
+                    "lempel_ziv_complexity": [{"bins": 5}]
+                }
+            },
+            800: {
+                "z||permutation_entropy|dimension_5|tau_1@window_800": {
+                    "symmetry_looking": [{"r": 0.35000000000000003}]
+                }
+            },
+            20: {
+                "y||time_reversal_asymmetry_statistic|lag_3@window_20": {
+                    "fft_coefficient": [{"attr": "imag", "coeff": 1}]
+                }
+            },
+            5: {
+                "x||ratio_value_number_to_time_series_length@window_5": {
+                    "range_count": [{"max": 1, "min": -1}]
+                }
+            },
+        }
+
+        self.assertTrue(fts_dict == expected_fts_dict)
+        self.assertTrue(fd_dict == expected_fd_dict)
 
     def test_interpret_feature_dynamic(self):
-        assert True
+
+        # Test input 
+        # TODO: Could factor out the test input as it is used in multiple different testing functions
+        full_feature_names_inputs = (
+            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
+            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
+            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
+            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
+            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
+            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
+        )
+
+        # Expected values
+        expected_multiple_input_timeseries = ("x", "y", "z", "x", "y", "x")
+        expected_feature_timeseries_calculators = (
+            {"ratio_beyond_r_sigma": [{"r": 2}]},
+            {"variance_larger_than_standard_deviation": None},
+            {"permutation_entropy": [{"dimension": 5, "tau": 1}]},
+            {"value_count": [{"value": 1}]},
+            {"time_reversal_asymmetry_statistic": [{"lag": 3}]},
+            {"ratio_value_number_to_time_series_length": None},
+        )
+        expected_window_lengths = (10, 200, 800, 10, 20, 5)
+        expected_feature_dynamic_calculators = (
+            {"energy_ratio_by_chunks": [{"num_segments": 10, "segment_focus": 3}]},
+            {"lempel_ziv_complexity": [{"bins": 5}]},
+            {"symmetry_looking": [{"r": 0.35000000000000003}]},
+            {
+                "change_quantiles": [
+                    {"f_agg": "var", "isabs": False, "qh": 0.8, "ql": 0.4}
+                ]
+            },
+            {"fft_coefficient": [{"attr": "imag", "coeff": 1}]},
+            {"range_count": [{"max": 1, "min": -1}]},
+        )
+
+        # Combine expected values into the expected intepretation
+        expected_intepreted_feature_dynamics = tuple(
+            {
+                "Full Feature Dynamic Name": full_feature_dynamic_name,
+                "Input Timeseries": expected_single_input_timeseries,
+                "Feature Timeseries Calculator": expected_feature_timeseries_calculator,
+                "Window Length": expected_window_length,
+                "Feature Dynamic Calculator": expected_feature_dynamic_calculator,
+            }
+            for (
+                full_feature_dynamic_name,
+                expected_single_input_timeseries,
+                expected_feature_timeseries_calculator,
+                expected_window_length,
+                expected_feature_dynamic_calculator,
+            ) in zip(
+                full_feature_names_inputs,
+                expected_multiple_input_timeseries,
+                expected_feature_timeseries_calculators,
+                expected_window_lengths,
+                expected_feature_dynamic_calculators,
+            )
+        )
+        # Get the actual interpretation
+        actual_interpreted_feature_dynamics = tuple(
+            interpret_feature_dynamic(full_feature_name_input)
+            for full_feature_name_input in full_feature_names_inputs
+        )
+        self.assertTrue(
+            actual_interpreted_feature_dynamics == expected_intepreted_feature_dynamics
+        )
 
     def test_derive_features_dictionaries(self):
         assert True
