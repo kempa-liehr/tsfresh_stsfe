@@ -308,7 +308,7 @@ def dictionary_to_string(dictionary: dict) -> str:
 
 def gen_pdf_for_feature_dynamics(
     feature_dynamics_names: List[str],
-    output_path: str = "feature_dynamics_interpretation",
+    output_filename: str = "feature_dynamics_interpretation",
 ) -> None:
     """
     Given a list of full feature dynamics names, write these
@@ -329,12 +329,12 @@ def gen_pdf_for_feature_dynamics(
     link1 = "* [How to interpret feature dynamics](https://github.com/blue-yonder/tsfresh/tree/main/notebooks/examples)"
     link2 = "* [List of feature calculators](https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html)"
 
-    with open("feature_dynamics_interpretation.md", "w") as f:
+    with open(f"{output_filename}.md", "w") as f:
         f.write(
             f"{title}\n\n{linebreak}\n\n{context}\n\n{link1}\n\n{link2}\n\n{linebreak}\n\n{feature_dynamics_summary}"
         )
 
     md2pdf(
-        pdf_file_path=f"{output_path}.pdf",
-        md_file_path=f"{output_path}.md",
+        pdf_file_path=f"{output_filename}.pdf",
+        md_file_path=f"{output_filename}.md",
     )

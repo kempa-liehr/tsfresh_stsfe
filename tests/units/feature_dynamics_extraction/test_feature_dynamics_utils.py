@@ -1,4 +1,5 @@
 from unittest import TestCase
+import os
 
 from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
     clean_feature_timeseries_name,
@@ -327,7 +328,7 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
 
     def test_interpret_feature_dynamic(self):
 
-        # Test input 
+        # Test input
         # TODO: Could factor out the test input as it is used in multiple different testing functions
         full_feature_names_inputs = (
             "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
@@ -394,14 +395,52 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
             actual_interpreted_feature_dynamics == expected_intepreted_feature_dynamics
         )
 
-    def test_derive_features_dictionaries(self):
-        assert True
-
     def test_dictionary_to_string(self):
-        assert True
+        dictionary_input = {
+            "This should be bold": "This should be italicised",
+            "This should also be bold": "This should also be italicised",
+            500: 600,
+            "500": "600",
+            float(500.00): float(600.00),
+            True: False,
+        }
+
+        expected_string_output = "**This should be bold** : ```This should be italicised```<br>**This should also be bold** : ```This should also be italicised```<br>**500** : ```600.0```<br>**500** : ```600```<br>**True** : ```False```<br>"
+        actual_string_output = dictionary_to_string(dictionary_input)
+        self.assertTrue(actual_string_output == expected_string_output)
+
+        # TODO: Test to make it break if a strange type is given i.e. not float int str or bool
+        # TODO: Test to break when there are unhashable types
 
     def test_gen_pdf_for_feature_dynamics(self):
-        assert True
+        # This unit test is just going to call the
+        # function. If there is no error, then the test passes!
+        # NOTE: Not sure if this is the correct way to unit test
+        # something that writes to a file but this is my best guess.
+
+        full_feature_names_inputs = (  # Could/should factor this out into a fixture as used multiple times
+            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
+            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
+            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
+            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
+            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
+            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
+        )
+
+        output_filename_prefix = "feature_dynamics_interpretation_test"
+        gen_pdf_for_feature_dynamics(
+            full_feature_names_inputs, output_filename=output_filename_prefix
+        )
+
+        pdf_exists = os.path.exists(f"{output_filename_prefix}.pdf")
+        markdown_exists = os.path.exists(f"{output_filename_prefix}.md")
+
+        if pdf_exists:
+            os.remove(f"{output_filename_prefix}.pdf")
+        if markdown_exists:
+            os.remove(f"{output_filename_prefix}.md")
+
+        self.assertTrue(pdf_exists and markdown_exists)
 
 
 class EngineerTimeSeriesTestCase(TestCase):
