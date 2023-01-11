@@ -210,6 +210,8 @@ def engineer_input_timeseries(
 
     """
 
+    # TODO: This function SHOULD be able to handle all 3 types of ts data input formats!!!!!!!!
+
     def series_differencing(ts: pd.DataFrame, ts_kinds: List[str]) -> pd.DataFrame:
         for ts_kind in ts_kinds:
             ts["dt_" + ts_kind] = ts[ts_kind].diff()

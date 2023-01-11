@@ -1,5 +1,7 @@
 from unittest import TestCase
 import os
+from tests.fixtures import DataTestCase
+import pandas as pd
 
 from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
     clean_feature_timeseries_name,
@@ -443,14 +445,98 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         self.assertTrue(pdf_exists and markdown_exists)
 
 
-class EngineerTimeSeriesTestCase(TestCase):
+class EngineerTimeSeriesTestCase(DataTestCase):
     """"""
 
+    # NOTE / TODO: These tests need to be EXTENSIVE.
+    # Test all three input formats
+
     def test_engineer_input_timeseries(self):
-        assert True
+        # NOTE: Final version of this unit test should do the following:
+        # 1. Handle any of the 3 time series data input formats
+        # 2. Handle irregular time series elegantly
+        # 3. Handle NaNs in the input timeseries elegantly (maybe - might be better as the function caller's responsibility to clean)
 
-    def test_series_differencing(self):
-        assert True
+        # VERY simple example (TODO: Add more examples that cover the cases especially using self.create_test_data_sample())
+        id = [1, 1, 1, 2, 2, 2]
+        sort = [1, 2, 3, 1, 2, 3]
+        y1 = [1, 3, 27, 18, 12, -34]
+        y2 = [-10, 0, 1, 3, 14, 12]
+        y3 = [6, 5, 4, 3, 2, 1]
+        ts = pd.DataFrame({"id": id, "sort": sort, "y1": y1, "y2": y2, "y3": y3})
+        # Expected outputs:
+        dt_y1 = [0.0, 2.0, 24.0, -9.0, -6.0, -46.0]
+        dt_y2 = [0.0, 10.0, 1.0, 2.0, 11.0, -2.0]
+        dt_y3 = [0.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+        D_y1y2 = [11, 3, 26, 15, -2, -46]
+        D_y1y3 = [-5, -2, 23, 15, 10, -35]
+        D_y2y3 = [-16, -5, -3, 0, 12, 11]
 
-    def test_diff_between_series(self):
-        assert True
+        ts_expected_1 = pd.DataFrame(
+            {
+                "y1": y1,
+                "y2": y2,
+                "y3": y3,
+                "dt_y1": dt_y1,
+                "dt_y2": dt_y2,
+                "dt_y3": dt_y3,
+                "id": id,
+                "sort": sort,
+            }
+        )
+        ts_actual_1 = engineer_input_timeseries(
+            timeseries=ts,
+            column_sort="sort",
+            column_id="id",
+            compute_differences_within_series=True,
+            compute_differences_between_series=False,
+        )
+        self.assertTrue(ts_actual_1.equals(ts_expected_1))
+
+        ts_expected_2 = pd.DataFrame(
+            {
+                "y1": y1,
+                "y2": y2,
+                "y3": y3,
+                "D_y1y2": D_y1y2,
+                "D_y1y3": D_y1y3,
+                "D_y2y3": D_y2y3,
+                "id": id,
+                "sort": sort,
+            }
+        )
+        ts_actual_2 = engineer_input_timeseries(
+            timeseries=ts,
+            column_sort="sort",
+            column_id="id",
+            compute_differences_within_series=False,
+            compute_differences_between_series=True,
+        )
+        self.assertTrue(ts_actual_2.equals(ts_expected_2))
+
+        ts_expected_3 = pd.DataFrame(
+            {
+                "y1": y1,
+                "y2": y2,
+                "y3": y3,
+                "dt_y1": dt_y1,
+                "dt_y2": dt_y2,
+                "dt_y3": dt_y3,
+                "D_y1y2": D_y1y2,
+                "D_y1y3": D_y1y3,
+                "D_y2y3": D_y2y3,
+                "id": id,
+                "sort": sort,
+            }
+        )
+        ts_actual_3 = engineer_input_timeseries(
+            timeseries=ts,
+            column_sort="sort",
+            column_id="id",
+            compute_differences_within_series=True,
+            compute_differences_between_series=True,
+        )
+        self.assertTrue(ts_actual_3.equals(ts_expected_3))
+
+        # TODO: More tests are absolutely neccessary, and should be able to take in ANY timeseries container,
+        # and have suitable input validation checks
