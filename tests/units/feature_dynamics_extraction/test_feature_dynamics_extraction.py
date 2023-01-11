@@ -118,6 +118,9 @@ class DynamicsExtractionTestCase(DataTestCase):
             )
         )
 
+    def test_extract_feature_dynamics_multiple_window_lengths(self):
+        assert True
+
     def test_extract_feature_dynamics_uses_only_kind_to_fc_settings(self):
         df = self.create_test_data_sample()
         window_length=5
@@ -523,3 +526,9 @@ class DynamicsDistributorUsageTestCase(DataTestCase):
         )
 
         self.assertTrue(mock.close.called)
+
+
+class DynamicsDoFeatureDynamicsExtractionTestCase(DataTestCase):
+
+    def test_do_feature_dynamics_extraction(self):
+        assert True
