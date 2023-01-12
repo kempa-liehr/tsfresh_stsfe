@@ -7,6 +7,8 @@ from typing import List
 from md2pdf.core import md2pdf
 from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
+from tsfresh.feature_extraction.data import to_tsdata, Timeseries
+
 
 
 def clean_feature_timeseries_name(
@@ -187,11 +189,12 @@ def derive_features_dictionaries(feature_names: List[str]) -> Tuple[dict, dict]:
 
 
 def engineer_input_timeseries(
-    timeseries: pd.DataFrame,
+    timeseries_container,
+    differences_type: str, # 'within' or 'between'
     column_id: str = None,
     column_sort: str = None,
-    compute_differences_within_series: bool = True,
-    compute_differences_between_series: bool = False,
+    column_kind: str = None,
+    column_value: str = None,
 ) -> pd.DataFrame:
     """
     Time series differencing with 1 order of differencing and phase difference operations to add new engineered time series to the input time series
@@ -211,46 +214,39 @@ def engineer_input_timeseries(
     """
 
     # TODO: This function SHOULD be able to handle all 3 types of ts data input formats!!!!!!!!
+    # NOTE: Function cannot handle dask dataframes
+    if differences_type != 'within' and differences_type != 'between':
+        raise ValueError("`differences_type` is expected to be `within` or `between`")
 
-    def series_differencing(ts: pd.DataFrame, ts_kinds: List[str]) -> pd.DataFrame:
-        for ts_kind in ts_kinds:
-            ts["dt_" + ts_kind] = ts[ts_kind].diff()
-            ts.loc[0, ["dt_" + ts_kind]] = 0  # adjust for the NaN value at first index.
-        return ts
+    def series_differencing(timeseries_container):
+        # Assumes timestamps are equidistant from each other
+        data = to_tsdata(timeseries_container, column_id, column_kind, column_value, column_sort)
 
-    def diff_between_series(ts: pd.DataFrame, ts_kinds: str) -> pd.DataFrame:
-        assert (
-            len(ts_kinds) > 1
-        ), "Can only difference `ts` if there is more than one series"
+        for timeseries in data:
+            new_timeseries = Timeseries(timeseries.id, f'dt_{timeseries.kind}', timeseries.data.diff().fillna(0))
+            data.append(new_timeseries)
+        # modified_timeseries_container = from_tsdata(data)
+        # return modified_timeseries_container
 
-        combs = combinations(ts_kinds, r=2)
-        for first_ts_kind, second_ts_kind in combs:
-            ts["D_" + first_ts_kind + second_ts_kind] = (
-                ts[first_ts_kind] - ts[second_ts_kind]
-            )
-        return ts
+    def diff_between_series(timeseries_container):
+        # NOTE: Assumes equidistant timestamps
+        # NOTE: Assumes timeseries are sorted
+        data = to_tsdata(timeseries_container, column_id, column_kind, column_value, column_sort)
 
-    assert isinstance(timeseries, pd.DataFrame), "`ts` expected to be a pd.DataFrame"
+        if len(data) <= 1:
+            raise ValueError("len(data) needs to be greater than 1. Can only difference `timeseries_container` if there is more than one series")
+        
+        for first_timeseries, second_timeseries in combinations(data, r=2):
+            if first_timeseries.id == second_timeseries.id:
+                new_timeseries = Timeseries(first_timeseries.id, f'D_{first_timeseries.kind}{second_timeseries.kind}', first_timeseries.data - second_timeseries.data)
+                #data.append(new_timeseries) # method depends on particular type of object
+        # modified_timeseries_container = from_tsdata(data)
+        # return modified_timeseries_container
 
-    ts = timeseries.copy()
-
-    ts_meta = ts[[column for column in [column_id, column_sort] if column is not None]]
-    ts = ts.drop(
-        [column for column in [column_id, column_sort] if column is not None], axis=1
-    )
-
-    assert all(
-        is_numeric_dtype(ts[col]) for col in ts.columns.tolist()
-    ), "All columns except `column_id` and `column_sort` in `ts` must be float or int"
-
-    ts_kinds = ts.columns
-    if compute_differences_within_series:
-        ts = series_differencing(ts, ts_kinds)
-    if compute_differences_between_series:
-        ts = diff_between_series(ts, ts_kinds)
-
-    return ts.join(ts_meta)
-
+    if differences_type == 'within':
+        return series_differencing(timeseries_container)
+    else:
+        return diff_between_series(timeseries_container)
 
 def interpret_feature_dynamic(feature_dynamic: str) -> dict:
     """

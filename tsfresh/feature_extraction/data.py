@@ -216,6 +216,12 @@ class WideTsFrameAdapter(PartitionedTsData):
             for kind in self.value_columns:
                 yield Timeseries(group_name, kind, group[kind])
 
+    def append(self, new_ts: Timeseries):
+        # This method adds a new timeseries to the object
+        print('df-grouped')
+        print(self.df_grouped)
+        #self = itertools.chain(self, [new_ts])
+
 
 class LongTsFrameAdapter(PartitionedTsData):
     def __init__(self, df, column_id, column_kind, column_value=None, column_sort=None):
@@ -277,6 +283,15 @@ class LongTsFrameAdapter(PartitionedTsData):
                 group = group.sort_values(self.column_sort)
             yield Timeseries(group_key[0], str(group_key[1]), group[self.column_value])
 
+    def append(self, new_ts: Timeseries):
+        # This method adds a new timeseries to the object
+        print('df ungrouped')
+        print(self.df_grouped.obj)
+        
+        #self = itertools.chain(self, [new_ts])
+        print("self col value")
+        print(self.column_value)
+        
 
 class TsDictAdapter(PartitionedTsData):
     def __init__(self, ts_dict, column_id, column_value, column_sort=None):
@@ -323,6 +338,10 @@ class TsDictAdapter(PartitionedTsData):
 
     def __len__(self):
         return sum(grouped_df.ngroups for grouped_df in self.grouped_dict.values())
+
+    def append(self, new_ts: Timeseries):
+        # This method adds a new timeseries to the object
+        return itertools.chain(self, [new_ts])
 
 
 class DaskTsAdapter(TsData):
@@ -426,6 +445,9 @@ class DaskTsAdapter(TsData):
 
         return feature_table
 
+    def append(self, new_ts: Timeseries):
+        # This method adds a new timeseries to the object
+        return itertools.chain(self, [new_ts])
 
 def to_tsdata(
     df, column_id=None, column_kind=None, column_value=None, column_sort=None

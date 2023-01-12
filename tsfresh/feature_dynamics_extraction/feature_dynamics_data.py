@@ -114,3 +114,11 @@ class ApplyableSplitTsData(ApplyableTsData):
     def pivot(self, results):
         """Pivoting can be copied from the root ts object"""
         return self._root_ts_data.pivot(results)
+
+
+def from_tsdata(ts_data_object):
+    """
+    Sends a ts_data object back to the format 
+    of whatever container it came from.
+    """
+    pass
