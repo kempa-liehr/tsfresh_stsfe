@@ -461,8 +461,6 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             {"id": id, "sort": sort, "y1": y1, "y2": y2, "y3": y3}
         )
 
-        print("flat_dataframe goes to WideTsFrameAdapter")
-
         engineered_ts = engineer_input_timeseries(
             timeseries_container=flat_timeseries_container,
             column_sort="sort",
@@ -499,46 +497,107 @@ class EngineerTimeSeriesTestCase(DataTestCase):
 
     def test_engineer_input_timeseries_stacked_dataframe(self):
         # Input format 2: A stacked dataframe (if column_value and column_kind are set)
-        stacked_timeseries_container = self.create_test_data_sample()
-        print(stacked_timeseries_container)
+        column_sort = "sort"
+        column_id = "id"
+        column_kind = "kind"
+        column_value = "val"
 
-        engineered_ts = engineer_input_timeseries(
-            timeseries_container=stacked_timeseries_container,
-            column_sort="sort",
-            column_id="id",
-            column_kind="kind",
-            column_value="val",
-            compute_differences_within_series=True,
-            compute_differences_between_series=False,
+        # Set up input time series
+        id = 3 * [1, 1, 1, 2, 2, 2]
+        sort = 3 * [1, 2, 3, 1, 2, 3]
+        val = [1, 3, 27, 18, 12, -34] + [-10, 0, 1, 3, 14, 12] + [6, 5, 4, 3, 2, 1]
+        kind = 6 * ["y1"] + 6 * ["y2"] + 6 * ["y3"]
+        stacked_dataframe_timeseries_container = pd.DataFrame(
+            {column_id: id, column_sort: sort, column_kind: kind, column_value: val}
         )
 
-        engineered_ts = engineer_input_timeseries(
-            timeseries_container=stacked_timeseries_container,
-            column_sort="sort",
-            column_id="id",
-            column_kind="kind",
-            column_value="val",
-            compute_differences_within_series=False,
-            compute_differences_between_series=True,
+        # Test differences within
+        engineered_ts_within = engineer_input_timeseries(
+            timeseries_container=stacked_dataframe_timeseries_container,
+            differences_type="within",
+            column_sort=column_sort,
+            column_id=column_id,
+            column_kind=column_kind,
+            column_value=column_value,
         )
 
-        engineered_ts = engineer_input_timeseries(
-            timeseries_container=stacked_timeseries_container,
-            column_sort="sort",
-            column_id="id",
-            column_kind="kind",
-            column_value="val",
-            compute_differences_within_series=True,
-            compute_differences_between_series=True,
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
+        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+
+        expected_within_values = expected_dt_y1 + expected_dt_y2 + expected_dt_y3
+        expected_within_kinds = 6 * ["dt_y1"] + 6 * ["dt_y2"] + 6 * ["dt_y3"]
+
+        expected_engineered_ts_within = pd.concat(
+            [
+                pd.DataFrame(
+                    {
+                        column_id: id,
+                        column_sort: sort,
+                        column_kind: kind,
+                        column_value: val,
+                    }
+                ),
+                pd.DataFrame(
+                    {
+                        column_id: id,
+                        column_sort: sort,
+                        column_kind: expected_within_kinds,
+                        column_value: expected_within_values,
+                    }
+                ),
+            ]
+        ).reset_index(drop=True)
+
+        self.assertTrue(engineered_ts_within.equals(expected_engineered_ts_within))
+
+        # Test differences between
+        engineered_ts_between = engineer_input_timeseries(
+            timeseries_container=stacked_dataframe_timeseries_container,
+            differences_type="between",
+            column_sort=column_sort,
+            column_id=column_id,
+            column_kind=column_kind,
+            column_value=column_value,
         )
 
-        expected_engineered_ts = 0
+        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
+        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
+        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
 
-        self.assertTrue(engineered_ts.equal(expected_engineered_ts))
+        expected_between_values = expected_D_y1y2 + expected_D_y1y3 + expected_D_y2y3
+        expected_between_kinds = 6 * ["D_y1y2"] + 6 * ["D_y1y3"] + 6 * ["D_y2y3"]
+
+        expected_engineered_ts_between = pd.concat(
+            [
+                pd.DataFrame(
+                    {
+                        column_id: id,
+                        column_sort: sort,
+                        column_kind: kind,
+                        column_value: val,
+                    }
+                ),
+                pd.DataFrame(
+                    {
+                        column_id: id,
+                        column_sort: sort,
+                        column_kind: expected_between_kinds,
+                        column_value: expected_between_values,
+                    }
+                ),
+            ]
+        ).reset_index(drop=True)
+        
+        self.assertTrue(engineered_ts_between.equals(expected_engineered_ts_between))
 
     def test_engineer_input_timeseries_flat_dictionary(self):
         # Input format 3: A dictionary of flat dataframes (if only column_kind is set to none, and a dictionary is passed)
         # Maybe TODO: Make the test out of syncrony for each timeseries or not?
+        column_sort = "sort"
+        column_id = 'id'
+        column_value = 'value'
+        column_kind = None
 
         class testable_dictionary_of_dataframes(dict[pd.DataFrame]):
             def __eq__(self, other_dictionary_of_dataframes):
@@ -557,7 +616,9 @@ class EngineerTimeSeriesTestCase(DataTestCase):
         y3 = [6, 5, 4, 3, 2, 1]
         ys = {"y1": y1, "y2": y2, "y3": y3}
         dictionary_timeseries_container = {
-            y_name: pd.DataFrame({"id": id, "sort": sort, "value": y_values})
+            y_name: pd.DataFrame(
+                {column_id: id, column_sort: sort, column_value: y_values}
+            )
             for (y_name, y_values) in ys.items()
         }
 
@@ -565,15 +626,14 @@ class EngineerTimeSeriesTestCase(DataTestCase):
         engineered_ts_within = engineer_input_timeseries(
             timeseries_container=dictionary_timeseries_container,
             differences_type="within",
-            column_sort="sort",
-            column_id="id",
-            column_value="value",
-            column_kind=None,
+            column_sort=column_sort,
+            column_id=column_id,
+            column_value=column_value,
+            column_kind=column_kind,
         )
-
-        expected_dt_y1 = [0.0, 2.0, 24.0, -9.0, -6.0, -46.0]
-        expected_dt_y2 = [0.0, 10.0, 1.0, 2.0, 11.0, -2.0]
-        expected_dt_y3 = [0.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
+        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
         expected_ys = {
             "y1": y1,
             "y2": y2,
@@ -583,7 +643,9 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             "dt_y3": expected_dt_y3,
         }
         expected_engineered_ts_within = {
-            y_name: pd.DataFrame({"id": id, "sort": sort, "value": y_values})
+            y_name: pd.DataFrame(
+                {column_id: id, column_sort: sort, column_value: y_values}
+            )
             for (y_name, y_values) in expected_ys.items()
         }
         self.assertTrue(
@@ -595,12 +657,11 @@ class EngineerTimeSeriesTestCase(DataTestCase):
         engineered_ts_between = engineer_input_timeseries(
             timeseries_container=dictionary_timeseries_container,
             differences_type="between",
-            column_sort="sort",
-            column_id="id",
-            column_value="value",
-            column_kind=None,
+            column_sort=column_sort,
+            column_id=column_id,
+            column_value=column_value,
+            column_kind=column_kind,
         )
-
         expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
         expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
         expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
@@ -613,10 +674,11 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             "D_y2y3": expected_D_y2y3,
         }
         expected_engineered_ts_between = {
-            y_name: pd.DataFrame({"id": id, "sort": sort, "value": y_values})
+            y_name: pd.DataFrame(
+                {column_id: id, column_sort: sort, column_value: y_values}
+            )
             for (y_name, y_values) in expected_ys.items()
         }
-
         self.assertTrue(
             testable_dictionary_of_dataframes(engineered_ts_between)
             == testable_dictionary_of_dataframes(expected_engineered_ts_between)

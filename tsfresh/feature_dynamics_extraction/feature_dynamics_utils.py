@@ -220,8 +220,7 @@ def engineer_input_timeseries(
 
     def series_differencing(timeseries_container):
         # NOTE: Assumes timestamps are equidistant from each other
-        timeseries_container_cp = timeseries_container.copy()
-        data = to_tsdata(timeseries_container_cp, column_id, column_kind, column_value, column_sort)
+        data = to_tsdata(timeseries_container, column_id, column_kind, column_value, column_sort)
         
         if not isinstance(data, (WideTsFrameAdapter, LongTsFrameAdapter, TsDictAdapter)):
             raise ValueError("Please use a valid supported data format (Dask and PySpark is not supported).")
@@ -232,15 +231,24 @@ def engineer_input_timeseries(
                 new_timeseries = Timeseries(timeseries.id, f'dt_{timeseries.kind}', timeseries.data.diff().fillna(0))
                 data.append(new_timeseries)
         
-        elif isinstance(data, WideTsFrameAdapter):
-            print("long data engineering")
+        elif isinstance(data, LongTsFrameAdapter):
+            
+            def stacked_df_within_differencer(timeseries_container): 
+                yield timeseries_container
+                for kind, dataframe in timeseries_container.groupby(column_kind):
+                    new_timeseries = dataframe.copy()
+                    new_timeseries[column_value] = new_timeseries.groupby(column_id)[column_value].diff().fillna(0)
+                    new_timeseries[column_kind] = f'dt_{kind}'
+                    yield new_timeseries
+            
+            timeseries_container_cp = pd.concat(stacked_df_within_differencer(timeseries_container)).reset_index(drop=True)
         
         elif isinstance(data, TsDictAdapter): 
+            timeseries_container_cp = timeseries_container.copy()
             for kind, flat_dataframe in timeseries_container.items():
                 new_timeseries = flat_dataframe.copy()
-                new_timeseries[column_value] = new_timeseries[column_value].diff().fillna(0)
+                new_timeseries[column_value] = new_timeseries.groupby(column_id)[column_value].diff().fillna(0)
                 timeseries_container_cp[f'dt_{kind}'] = new_timeseries
-        
         
         return timeseries_container_cp
 
@@ -260,14 +268,27 @@ def engineer_input_timeseries(
         if isinstance(data, WideTsFrameAdapter):
             print("wide data engineering")
             
-        elif isinstance(data, WideTsFrameAdapter):
-            print("long data engineering")
+        elif isinstance(data, LongTsFrameAdapter):
+            def stacked_df_between_differencer(timeseries_container): 
+                yield timeseries_container
+                for first_timeseries, second_timeseries in combinations(timeseries_container.groupby(column_kind), r=2):
+                    first_kind,first_dataframe = first_timeseries
+                    second_kind,second_dataframe = second_timeseries
+                    new_timeseries = first_dataframe
+                    # Index on column_id, column_sort, and subtract column_value
+                    new_timeseries = first_dataframe.drop(column_kind, axis=1).set_index([column_id, column_sort]).subtract(second_dataframe.drop(column_kind, axis=1).set_index([column_id, column_sort])).reset_index() # Add if column sort is None
+                    new_timeseries[column_kind] = f'D_{first_kind}{second_kind}'
+                    yield new_timeseries
+
+            timeseries_container_cp = pd.concat(stacked_df_between_differencer(timeseries_container)).reset_index(drop=True)
+
+
         elif isinstance(data, TsDictAdapter):
             for first_timeseries, second_timeseries in combinations(timeseries_container.items(), r=2):
                 first_kind, first_dataframe = first_timeseries
                 second_kind, second_dataframe = second_timeseries
                 # Index on column_id, column_sort, and subtract column_value 
-                new_timeseries = first_dataframe.set_index([column_id, column_sort]).subtract(second_dataframe.set_index([column_id, column_sort])).reset_index()
+                new_timeseries = first_dataframe.set_index([column_id, column_sort]).subtract(second_dataframe.set_index([column_id, column_sort])).reset_index() # Add if column sort is None
                 timeseries_container_cp[f'D_{first_kind}{second_kind}'] = new_timeseries            
 
         return timeseries_container_cp

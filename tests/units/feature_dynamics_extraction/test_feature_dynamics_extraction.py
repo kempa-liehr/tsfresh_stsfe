@@ -25,7 +25,6 @@ class DynamicsExtractionTestCase(DataTestCase):
     def test_extract_feature_dynamics(self):
         # TODO: implement more methods and test more aspects
         df = self.create_test_data_sample()
-        print(df)
         window_length = 15
         extracted_feature_dynamics = extract_feature_dynamics(
             df,
