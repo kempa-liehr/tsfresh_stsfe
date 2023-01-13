@@ -7,7 +7,7 @@ from typing import List
 from md2pdf.core import md2pdf
 from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
-from tsfresh.feature_extraction.data import to_tsdata, Timeseries
+from tsfresh.feature_extraction.data import to_tsdata, Timeseries, WideTsFrameAdapter,LongTsFrameAdapter,TsDictAdapter
 
 
 
@@ -219,29 +219,59 @@ def engineer_input_timeseries(
         raise ValueError("`differences_type` is expected to be `within` or `between`")
 
     def series_differencing(timeseries_container):
-        # Assumes timestamps are equidistant from each other
-        data = to_tsdata(timeseries_container, column_id, column_kind, column_value, column_sort)
-
-        for timeseries in data:
-            new_timeseries = Timeseries(timeseries.id, f'dt_{timeseries.kind}', timeseries.data.diff().fillna(0))
-            data.append(new_timeseries)
-        # modified_timeseries_container = from_tsdata(data)
-        # return modified_timeseries_container
+        # NOTE: Assumes timestamps are equidistant from each other
+        timeseries_container_cp = timeseries_container.copy()
+        data = to_tsdata(timeseries_container_cp, column_id, column_kind, column_value, column_sort)
+        
+        if not isinstance(data, (WideTsFrameAdapter, LongTsFrameAdapter, TsDictAdapter)):
+            raise ValueError("Please use a valid supported data format (Dask and PySpark is not supported).")
+        
+        if isinstance(data, WideTsFrameAdapter):
+            print("wide data engineering")
+            for timeseries in data:
+                new_timeseries = Timeseries(timeseries.id, f'dt_{timeseries.kind}', timeseries.data.diff().fillna(0))
+                data.append(new_timeseries)
+        
+        elif isinstance(data, WideTsFrameAdapter):
+            print("long data engineering")
+        
+        elif isinstance(data, TsDictAdapter): 
+            for kind, flat_dataframe in timeseries_container.items():
+                new_timeseries = flat_dataframe.copy()
+                new_timeseries[column_value] = new_timeseries[column_value].diff().fillna(0)
+                timeseries_container_cp[f'dt_{kind}'] = new_timeseries
+        
+        
+        return timeseries_container_cp
 
     def diff_between_series(timeseries_container):
         # NOTE: Assumes equidistant timestamps
         # NOTE: Assumes timeseries are sorted
-        data = to_tsdata(timeseries_container, column_id, column_kind, column_value, column_sort)
+        timeseries_container_cp = timeseries_container.copy()
+
+        data = to_tsdata(timeseries_container_cp, column_id, column_kind, column_value, column_sort)
+
+        if not isinstance(data, (WideTsFrameAdapter, LongTsFrameAdapter, TsDictAdapter)):
+            raise ValueError("Please use a valid supported data format (Dask and PySpark is not supported).")
 
         if len(data) <= 1:
             raise ValueError("len(data) needs to be greater than 1. Can only difference `timeseries_container` if there is more than one series")
         
-        for first_timeseries, second_timeseries in combinations(data, r=2):
-            if first_timeseries.id == second_timeseries.id:
-                new_timeseries = Timeseries(first_timeseries.id, f'D_{first_timeseries.kind}{second_timeseries.kind}', first_timeseries.data - second_timeseries.data)
-                #data.append(new_timeseries) # method depends on particular type of object
-        # modified_timeseries_container = from_tsdata(data)
-        # return modified_timeseries_container
+        if isinstance(data, WideTsFrameAdapter):
+            print("wide data engineering")
+            
+        elif isinstance(data, WideTsFrameAdapter):
+            print("long data engineering")
+        elif isinstance(data, TsDictAdapter):
+            for first_timeseries, second_timeseries in combinations(timeseries_container.items(), r=2):
+                first_kind, first_dataframe = first_timeseries
+                second_kind, second_dataframe = second_timeseries
+                # Index on column_id, column_sort, and subtract column_value 
+                new_timeseries = first_dataframe.set_index([column_id, column_sort]).subtract(second_dataframe.set_index([column_id, column_sort])).reset_index()
+                timeseries_container_cp[f'D_{first_kind}{second_kind}'] = new_timeseries            
+
+        return timeseries_container_cp
+
 
     if differences_type == 'within':
         return series_differencing(timeseries_container)

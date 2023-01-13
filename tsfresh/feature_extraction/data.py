@@ -341,6 +341,22 @@ class TsDictAdapter(PartitionedTsData):
 
     def append(self, new_ts: Timeseries):
         # This method adds a new timeseries to the object
+        print("NEW TIMESERIES")
+        print(new_ts)
+        print('new_ts.id')
+        print(new_ts.id)
+        print('new_ts.kind')
+        print(new_ts.kind)
+        print('new_ts.data')
+        print(new_ts.data)
+        print('self.grouped_dict')
+        print(self.grouped_dict)
+        if new_ts.kind not in self.grouped_dict:
+            #self.grouped_dict[new_ts.kind] = df.sort_values([column_sort]).groupby(column_id)
+            pass
+        else:
+            self.grouped_dict[new_ts.kind] = 0
+        
         return itertools.chain(self, [new_ts])
 
 
