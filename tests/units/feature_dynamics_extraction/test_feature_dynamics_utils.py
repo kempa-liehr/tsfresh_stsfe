@@ -448,52 +448,79 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
 class EngineerTimeSeriesTestCase(DataTestCase):
     """"""
 
-    # Test all three input formats
+    # TODO: Add tests where column_sort not provided...
 
+    # Test all three input formats
     def test_engineer_input_timeseries_flat_dataframe(self):
         # Input format 1: A Flat dataframe (if column_value and column_kind are both set to None)
+        column_sort = "sort"
+        column_id = "id"
+        column_value = None
+        column_kind = None
+
         id = [1, 1, 1, 2, 2, 2]
         sort = [1, 2, 3, 1, 2, 3]
         y1 = [1, 3, 27, 18, 12, -34]
         y2 = [-10, 0, 1, 3, 14, 12]
         y3 = [6, 5, 4, 3, 2, 1]
         flat_timeseries_container = pd.DataFrame(
-            {"id": id, "sort": sort, "y1": y1, "y2": y2, "y3": y3}
+            {column_id: id, column_sort: sort, "y1": y1, "y2": y2, "y3": y3}
         )
 
-        engineered_ts = engineer_input_timeseries(
+        # Test within
+        engineered_ts_within = engineer_input_timeseries(
             timeseries_container=flat_timeseries_container,
-            column_sort="sort",
-            column_id="id",
-            column_value=None,
-            column_kind=None,
-            compute_differences_within_series=True,
-            compute_differences_between_series=False,
+            differences_type="within",
+            column_sort=column_sort,
+            column_id=column_id,
+            column_value=column_value,
+            column_kind=column_kind,
         )
 
-        engineered_ts = engineer_input_timeseries(
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
+        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+        expected_engineered_ts_within = pd.DataFrame(
+            {
+                column_id: id,
+                column_sort: sort,
+                "y1": y1,
+                "y2": y2,
+                "y3": y3,
+                "dt_y1": expected_dt_y1,
+                "dt_y2": expected_dt_y2,
+                "dt_y3": expected_dt_y3,
+            }
+        )
+        self.assertTrue(engineered_ts_within.equals(expected_engineered_ts_within))
+
+        engineered_ts_between = engineer_input_timeseries(
             timeseries_container=flat_timeseries_container,
-            column_sort="sort",
-            column_id="id",
-            column_value=None,
-            column_kind=None,
-            compute_differences_within_series=False,
-            compute_differences_between_series=True,
+            differences_type="between",
+            column_sort=column_sort,
+            column_id=column_id,
+            column_value=column_value,
+            column_kind=column_kind,
         )
 
-        engineered_ts = engineer_input_timeseries(
-            timeseries_container=flat_timeseries_container,
-            column_sort="sort",
-            column_id="id",
-            column_value=None,
-            column_kind=None,
-            compute_differences_within_series=True,
-            compute_differences_between_series=False,
+        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
+        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
+        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+
+        expected_engineered_ts_between = pd.DataFrame(
+            {
+                column_id: id,
+                column_sort: sort,
+                "y1": y1,
+                "y2": y2,
+                "y3": y3,
+                "D_y1y2": expected_D_y1y2,
+                "D_y1y3": expected_D_y1y3,
+                "D_y2y3": expected_D_y2y3,
+            }
         )
 
-        expected_engineered_ts = 0
-
-        self.assertTrue(engineered_ts.equal(expected_engineered_ts))
+        self.assertTrue(engineered_ts_between.equals(expected_engineered_ts_between))
 
     def test_engineer_input_timeseries_stacked_dataframe(self):
         # Input format 2: A stacked dataframe (if column_value and column_kind are set)
@@ -588,15 +615,15 @@ class EngineerTimeSeriesTestCase(DataTestCase):
                 ),
             ]
         ).reset_index(drop=True)
-        
+
         self.assertTrue(engineered_ts_between.equals(expected_engineered_ts_between))
 
     def test_engineer_input_timeseries_flat_dictionary(self):
         # Input format 3: A dictionary of flat dataframes (if only column_kind is set to none, and a dictionary is passed)
         # Maybe TODO: Make the test out of syncrony for each timeseries or not?
         column_sort = "sort"
-        column_id = 'id'
-        column_value = 'value'
+        column_id = "id"
+        column_value = "value"
         column_kind = None
 
         class testable_dictionary_of_dataframes(dict[pd.DataFrame]):
@@ -683,93 +710,3 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             testable_dictionary_of_dataframes(engineered_ts_between)
             == testable_dictionary_of_dataframes(expected_engineered_ts_between)
         )
-
-    # def test_engineer_input_timeseries(self):
-    #     # NOTE: Final version of this unit test should do the following:
-    #     # 1. Handle any of the 3 time series data input formats
-    #     # 2. Handle irregular time series elegantly
-    #     # 3. Handle NaNs in the input timeseries elegantly (maybe - might be better as the function caller's responsibility to clean)
-
-    #     # VERY simple example (TODO: Add more examples that cover the cases especially using self.create_test_data_sample())
-    #     id = [1, 1, 1, 2, 2, 2]
-    #     sort = [1, 2, 3, 1, 2, 3]
-    #     y1 = [1, 3, 27, 18, 12, -34]
-    #     y2 = [-10, 0, 1, 3, 14, 12]
-    #     y3 = [6, 5, 4, 3, 2, 1]
-    #     ts = pd.DataFrame({"id": id, "sort": sort, "y1": y1, "y2": y2, "y3": y3})
-    #     # Expected outputs:
-    #     dt_y1 = [0.0, 2.0, 24.0, -9.0, -6.0, -46.0]
-    #     dt_y2 = [0.0, 10.0, 1.0, 2.0, 11.0, -2.0]
-    #     dt_y3 = [0.0, -1.0, -1.0, -1.0, -1.0, -1.0]
-    #     D_y1y2 = [11, 3, 26, 15, -2, -46]
-    #     D_y1y3 = [-5, -2, 23, 15, 10, -35]
-    #     D_y2y3 = [-16, -5, -3, 0, 12, 11]
-
-    #     ts_expected_1 = pd.DataFrame(
-    #         {
-    #             "y1": y1,
-    #             "y2": y2,
-    #             "y3": y3,
-    #             "dt_y1": dt_y1,
-    #             "dt_y2": dt_y2,
-    #             "dt_y3": dt_y3,
-    #             "id": id,
-    #             "sort": sort,
-    #         }
-    #     )
-    #     ts_actual_1 = engineer_input_timeseries(
-    #         timeseries_container=ts,
-    #         column_sort="sort",
-    #         column_id="id",
-    #         compute_differences_within_series=True,
-    #         compute_differences_between_series=False,
-    #     )
-    #     self.assertTrue(ts_actual_1.equals(ts_expected_1))
-
-    #     ts_expected_2 = pd.DataFrame(
-    #         {
-    #             "y1": y1,
-    #             "y2": y2,
-    #             "y3": y3,
-    #             "D_y1y2": D_y1y2,
-    #             "D_y1y3": D_y1y3,
-    #             "D_y2y3": D_y2y3,
-    #             "id": id,
-    #             "sort": sort,
-    #         }
-    #     )
-    #     ts_actual_2 = engineer_input_timeseries(
-    #         timeseries_container=ts,
-    #         column_sort="sort",
-    #         column_id="id",
-    #         compute_differences_within_series=False,
-    #         compute_differences_between_series=True,
-    #     )
-    #     self.assertTrue(ts_actual_2.equals(ts_expected_2))
-
-    #     ts_expected_3 = pd.DataFrame(
-    #         {
-    #             "y1": y1,
-    #             "y2": y2,
-    #             "y3": y3,
-    #             "dt_y1": dt_y1,
-    #             "dt_y2": dt_y2,
-    #             "dt_y3": dt_y3,
-    #             "D_y1y2": D_y1y2,
-    #             "D_y1y3": D_y1y3,
-    #             "D_y2y3": D_y2y3,
-    #             "id": id,
-    #             "sort": sort,
-    #         }
-    #     )
-    #     ts_actual_3 = engineer_input_timeseries(
-    #         timeseries_container=ts,
-    #         column_sort="sort",
-    #         column_id="id",
-    #         compute_differences_within_series=True,
-    #         compute_differences_between_series=True,
-    #     )
-    #     self.assertTrue(ts_actual_3.equals(ts_expected_3))
-
-    #     # TODO: More tests are absolutely neccessary, and should be able to take in ANY timeseries container,
-    #     # and have suitable input validation checks

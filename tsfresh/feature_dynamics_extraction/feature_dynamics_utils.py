@@ -212,13 +212,13 @@ def engineer_input_timeseries(
          Returns the original dataframe with the engineered timeseries added as new columns
 
     """
-
-    # TODO: This function SHOULD be able to handle all 3 types of ts data input formats!!!!!!!!
-    # NOTE: Function cannot handle dask dataframes
+    # NOTE: Function cannot handle dask dataframes and pyspark graphs
+    # TODO: Funciton needs to handle the case where column sort is not provided, 
+    # or should not even pass in the column_sort to begin with i.e. assume already sorted...
     if differences_type != 'within' and differences_type != 'between':
         raise ValueError("`differences_type` is expected to be `within` or `between`")
 
-    def series_differencing(timeseries_container):
+    def diff_within_series(timeseries_container, column_id, column_sort, column_kind, column_value):
         # NOTE: Assumes timestamps are equidistant from each other
         data = to_tsdata(timeseries_container, column_id, column_kind, column_value, column_sort)
         
@@ -226,10 +226,9 @@ def engineer_input_timeseries(
             raise ValueError("Please use a valid supported data format (Dask and PySpark is not supported).")
         
         if isinstance(data, WideTsFrameAdapter):
-            print("wide data engineering")
-            for timeseries in data:
-                new_timeseries = Timeseries(timeseries.id, f'dt_{timeseries.kind}', timeseries.data.diff().fillna(0))
-                data.append(new_timeseries)
+            timeseries_container_cp = timeseries_container.copy()
+            new_kinds = [f'dt_{kind}' for kind in timeseries_container.drop([column_id, column_sort], axis=1)]
+            timeseries_container_cp[new_kinds] = timeseries_container.drop(column_sort,axis=1).groupby(column_id).diff().fillna(0)
         
         elif isinstance(data, LongTsFrameAdapter):
             
@@ -252,7 +251,7 @@ def engineer_input_timeseries(
         
         return timeseries_container_cp
 
-    def diff_between_series(timeseries_container):
+    def diff_between_series(timeseries_container, column_id, column_sort, column_kind, column_value):
         # NOTE: Assumes equidistant timestamps
         # NOTE: Assumes timeseries are sorted
         timeseries_container_cp = timeseries_container.copy()
@@ -266,8 +265,11 @@ def engineer_input_timeseries(
             raise ValueError("len(data) needs to be greater than 1. Can only difference `timeseries_container` if there is more than one series")
         
         if isinstance(data, WideTsFrameAdapter):
-            print("wide data engineering")
-            
+            timeseries_container_cp = timeseries_container.copy()
+            for first_kind, second_kind in combinations(timeseries_container.drop([column_id, column_sort], axis=1), r=2):
+                new_kind = f'D_{first_kind}{second_kind}'
+                timeseries_container_cp[new_kind] = timeseries_container_cp.set_index([column_id, column_sort])[first_kind].subtract(timeseries_container_cp.set_index([column_id,column_sort])[second_kind]).reset_index([column_id, column_sort]).drop([column_id, column_sort], axis=1)
+
         elif isinstance(data, LongTsFrameAdapter):
             def stacked_df_between_differencer(timeseries_container): 
                 yield timeseries_container
@@ -282,7 +284,6 @@ def engineer_input_timeseries(
 
             timeseries_container_cp = pd.concat(stacked_df_between_differencer(timeseries_container)).reset_index(drop=True)
 
-
         elif isinstance(data, TsDictAdapter):
             for first_timeseries, second_timeseries in combinations(timeseries_container.items(), r=2):
                 first_kind, first_dataframe = first_timeseries
@@ -295,9 +296,9 @@ def engineer_input_timeseries(
 
 
     if differences_type == 'within':
-        return series_differencing(timeseries_container)
+        return diff_within_series(timeseries_container, column_id, column_sort, column_kind, column_value)
     else:
-        return diff_between_series(timeseries_container)
+        return diff_between_series(timeseries_container, column_id, column_sort, column_kind, column_value)
 
 def interpret_feature_dynamic(feature_dynamic: str) -> dict:
     """
