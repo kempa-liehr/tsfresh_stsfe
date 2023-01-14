@@ -2,6 +2,7 @@ from unittest import TestCase
 import os
 from tests.fixtures import DataTestCase
 import pandas as pd
+from typing import Dict
 
 from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
     clean_feature_timeseries_name,
@@ -679,7 +680,7 @@ class EngineerTimeSeriesTestCase(DataTestCase):
         pass
 
 
-class testable_dictionary_of_dataframes(dict[pd.DataFrame]):
+class testable_dictionary_of_dataframes(Dict[pd.DataFrame]):
     """
     Class to test equality of dictionaries of dataframes
     """
