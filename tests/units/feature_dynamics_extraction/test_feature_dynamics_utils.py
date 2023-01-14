@@ -680,12 +680,16 @@ class EngineerTimeSeriesTestCase(DataTestCase):
         pass
 
 
-class testable_dictionary_of_dataframes(Dict[pd.DataFrame]):
+class testable_dictionary_of_dataframes(dict):
     """
     Class to test equality of dictionaries of dataframes
     """
 
     def __eq__(self, other_dictionary_of_dataframes):
+
+        if any(isinstance(self[key], pd.DataFrame) is False for key in self):
+            raise ValueError("Expects a dictionary of dataframes")
+
         for key in self.keys():
             if key not in other_dictionary_of_dataframes:
                 return False
