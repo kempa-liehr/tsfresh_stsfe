@@ -687,7 +687,7 @@ class testable_dictionary_of_dataframes(dict):
 
     def __eq__(self, other_dictionary_of_dataframes):
 
-        if any(isinstance(self[key], pd.DataFrame) is False for key in self):
+        if any(isinstance(self[key], pd.DataFrame) is False for key in self.keys()):
             raise ValueError("Expects a dictionary of dataframes")
 
         for key in self.keys():

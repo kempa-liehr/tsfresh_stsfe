@@ -723,3 +723,631 @@ class DataTestCase(TestCase):
         homogenous_values = (id, sort)
 
         return dictionary_timeseries_container, column_params, kinds, homogenous_values
+
+    def create_test_data_expected_tuples(self):
+        test_data_expected_tuples = [
+        (
+            10,
+            "a",
+            pd.Series(
+                [
+                    36,
+                    71,
+                    27,
+                    62,
+                    56,
+                    58,
+                    67,
+                    11,
+                    2,
+                    24,
+                    45,
+                    30,
+                    0,
+                    9,
+                    41,
+                    28,
+                    33,
+                    19,
+                    29,
+                    43,
+                ],
+                index=list(range(20)),
+            ),
+        ),
+        (
+            10,
+            "b",
+            pd.Series(
+                [
+                    78,
+                    37,
+                    23,
+                    44,
+                    6,
+                    3,
+                    21,
+                    61,
+                    39,
+                    31,
+                    53,
+                    16,
+                    66,
+                    50,
+                    40,
+                    47,
+                    7,
+                    42,
+                    38,
+                    55,
+                ],
+                index=list(range(20)),
+            ),
+        ),
+        (
+            500,
+            "a",
+            pd.Series(
+                [
+                    76,
+                    72,
+                    74,
+                    75,
+                    32,
+                    64,
+                    46,
+                    35,
+                    15,
+                    70,
+                    57,
+                    65,
+                    51,
+                    26,
+                    5,
+                    25,
+                    10,
+                    69,
+                    73,
+                    77,
+                ],
+                index=list(range(20, 40)),
+            ),
+        ),
+        (
+            500,
+            "b",
+            pd.Series(
+                [
+                    8,
+                    60,
+                    12,
+                    68,
+                    22,
+                    17,
+                    18,
+                    63,
+                    49,
+                    34,
+                    20,
+                    52,
+                    48,
+                    14,
+                    79,
+                    4,
+                    1,
+                    59,
+                    54,
+                    13,
+                ],
+                index=list(range(20, 40)),
+            ),
+        ),
+    ]
+        return test_data_expected_tuples
+    
+
+    def create_test_data_expected_tuples_wide(self):
+        wide_test_data_expected_tuples = [
+            (
+            10,
+            "a",
+            pd.Series(
+                [
+                    11,
+                    9,
+                    67,
+                    45,
+                    30,
+                    58,
+                    62,
+                    19,
+                    56,
+                    29,
+                    0,
+                    27,
+                    36,
+                    43,
+                    33,
+                    2,
+                    24,
+                    71,
+                    41,
+                    28,
+                ],
+                index=list(range(20)),
+            ),
+        ),
+        (
+            10,
+            "b",
+            pd.Series(
+                [
+                    50,
+                    40,
+                    39,
+                    7,
+                    53,
+                    23,
+                    16,
+                    37,
+                    66,
+                    38,
+                    6,
+                    47,
+                    3,
+                    61,
+                    44,
+                    42,
+                    78,
+                    31,
+                    21,
+                    55,
+                ],
+                index=list(range(20)),
+            ),
+        ),
+        (
+            500,
+            "a",
+            pd.Series(
+                [
+                    15,
+                    35,
+                    25,
+                    32,
+                    69,
+                    65,
+                    70,
+                    64,
+                    51,
+                    46,
+                    5,
+                    77,
+                    26,
+                    73,
+                    76,
+                    75,
+                    72,
+                    74,
+                    10,
+                    57,
+                ],
+                index=list(range(20, 40)),
+            ),
+        ),
+        (
+            500,
+            "b",
+            pd.Series(
+                [
+                    4,
+                    14,
+                    68,
+                    22,
+                    18,
+                    52,
+                    54,
+                    60,
+                    79,
+                    12,
+                    49,
+                    63,
+                    8,
+                    59,
+                    1,
+                    13,
+                    20,
+                    17,
+                    48,
+                    34,
+                ],
+                index=list(range(20, 40)),
+            ),
+        ),
+    ]   
+        return wide_test_data_expected_tuples
+
+    def create_split_up_test_data_expected_tuples(self):
+        window_length = 6
+        # Window size of 6 should give the following chunks
+        test_data_expected_chunked_up_tuples = [
+        # 4 chunks with id: 10, kind: 'a'
+        ((10,0),
+        'a',
+        pd.Series(
+            [
+               36,
+               71,
+               27,
+               62,
+               56,
+               58
+            ],
+            index=[10] * 6
+        )),
+        ((10,1),
+        'a',
+        pd.Series(
+            [
+               67,
+               11,
+               2,
+               24,
+               45,
+               30 
+            ],
+            index=[10] * 6
+        )),
+        ((10,2),
+        'a',
+        pd.Series(
+            [
+               0,
+               9,
+               4,
+               28,
+               33,
+               19
+            ],
+            index=[10] * 6
+        )),
+        ((10,3),
+        'a',
+        pd.Series(
+            [
+               29,
+               43 
+            ],
+            index=[10] * 2
+        )),
+        # 4 chunks with id: 10, kind: 'b'
+        ((10,0),
+        'b',
+        pd.Series(
+            [
+               78,
+               37,
+               23,
+               44,
+               6,
+               3
+            ],
+            index=[10] * 6
+        )),
+        ((10,0),
+        'b',
+        pd.Series(
+            [
+               21,61,39,31,52,16
+            ],
+            index=[10] * 6
+        )),
+        ((10,0),
+        'b',
+        pd.Series(
+            [
+              66,50,40,47,7,42
+            ],
+            index=[10] * 6
+        )),
+        ((10,0),
+        'b',
+        pd.Series(
+            [
+               38,55
+            ],
+            index=[10] * 2
+        )),
+        # 4 chunks with id: 500, kind: 'a'
+        ((500,0),
+        'a',
+        pd.Series(
+            [
+               76,
+               72,
+               74,
+               75,
+               32,
+               64
+            ],
+            index=[500] * 6
+        )),
+        ((500,1),
+        'a',
+        pd.Series(
+            [
+               46,
+               35,
+               15,
+               70,
+               57,
+               65
+            ],
+            index=[500] * 6
+        )),
+        ((500,2),
+        'a',
+        pd.Series(
+            [
+               51,
+               26,
+               5,
+               25,
+               10,
+               69
+            ],
+            index=[500] * 6
+        )),
+        ((500,3),
+        'a',
+        pd.Series(
+            [
+               73,
+               77 
+            ],
+            index=[500] * 2
+        )),
+        # 4 chunks with id: 500, kind: 'b'
+        ((500,0),
+        'b',
+        pd.Series(
+            [
+               8,
+               60,
+               12,
+               68,
+               22,
+               17     
+            ],
+            index=[500] * 6
+        )),
+        ((500,1),
+        'b',
+        pd.Series(
+            [
+               18,
+               63,
+               49,
+               34,
+               20,
+               52 
+            ],
+            index=[500] * 6
+        )),
+        ((500,2),
+        'b',
+        pd.Series(
+            [
+               48,
+               14,
+               79,
+               4,
+               1,
+               59 
+            ],
+            index=[500] * 6
+        )),
+        ((500,3),
+        'b',
+        pd.Series(
+            [
+               54,
+               13 
+            ],
+            index=[500] * 2
+        )),
+        ]
+        
+        return (test_data_expected_chunked_up_tuples, window_length)
+
+    def create_split_up_test_data_expected_tuples_wide(self):
+        window_length = 6
+        # Window size of 6 should give the following chunks
+        wide_test_data_expected_chunked_up_tuples = [
+        # 4 chunks with id: 10, kind: 'a'
+        ((10,0),
+        'a',
+        pd.Series(
+            [
+               36,
+               71,
+               27,
+               62,
+               56,
+               58
+            ],
+            index=[10] * 6
+        )),
+        ((10,1),
+        'a',
+        pd.Series(
+            [
+               67,
+               11,
+               2,
+               24,
+               45,
+               30 
+            ],
+            index=[10] * 6
+        )),
+        ((10,2),
+        'a',
+        pd.Series(
+            [
+               0,
+               9,
+               41,
+               28,
+               33,
+               19
+            ],
+            index=[10] * 6
+        )),
+        ((10,3),
+        'a',
+        pd.Series(
+            [
+               29,
+               43 
+            ],
+            index=[10] * 2
+        )),
+        # 4 chunks with id: 10, kind: 'b'
+        ((10,0),
+        'b',
+        pd.Series(
+            [
+               78,
+               37,
+               23,
+               44,
+               6,
+               3
+            ],
+            index=[10] * 6
+        )),
+        ((10,0),
+        'b',
+        pd.Series(
+            [
+               21,61,39,31,52,16
+            ],
+            index=[10] * 6
+        )),
+        ((10,0),
+        'b',
+        pd.Series(
+            [
+              66,50,40,47,7,42
+            ],
+            index=[10] * 6
+        )),
+        ((10,0),
+        'b',
+        pd.Series(
+            [
+               38,55
+            ],
+            index=[10] * 2
+        )),
+        # 4 chunks with id: 500, kind: 'a'
+        ((500,0),
+        'a',
+        pd.Series(
+            [
+               76,
+               72,
+               74,
+               75,
+               32,
+               64
+            ],
+            index=[500] * 6
+        )),
+        ((500,1),
+        'a',
+        pd.Series(
+            [
+               46,
+               35,
+               15,
+               70,
+               57,
+               65
+            ],
+            index=[500] * 6
+        )),
+        ((500,2),
+        'a',
+        pd.Series(
+            [
+               51,
+               26,
+               5,
+               25,
+               10,
+               69
+            ],
+            index=[500] * 6
+        )),
+        ((500,3),
+        'a',
+        pd.Series(
+            [
+               73,
+               77 
+            ],
+            index=[500] * 2
+        )),
+        # 4 chunks with id: 500, kind: 'b'
+        ((500,0),
+        'b',
+        pd.Series(
+            [
+               8,
+               60,
+               12,
+               68,
+               22,
+               17     
+            ],
+            index=[500] * 6
+        )),
+        ((500,1),
+        'b',
+        pd.Series(
+            [
+               18,
+               63,
+               49,
+               34,
+               20,
+               52 
+            ],
+            index=[500] * 6
+        )),
+        ((500,2),
+        'b',
+        pd.Series(
+            [
+               48,
+               14,
+               79,
+               4,
+               1,
+               59 
+            ],
+            index=[500] * 6
+        )),
+        ((500,3),
+        'b',
+        pd.Series(
+            [
+               54,
+               13 
+            ],
+            index=[500] * 2
+        )),
+        ]
+        return (wide_test_data_expected_chunked_up_tuples, window_length)
