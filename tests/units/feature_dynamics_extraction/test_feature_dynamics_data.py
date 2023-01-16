@@ -1,7 +1,7 @@
 from tsfresh.feature_extraction.data import to_tsdata, LongTsFrameAdapter,WideTsFrameAdapter,TsDictAdapter
 from tsfresh.feature_dynamics_extraction.feature_dynamics_data import IterableSplitTsData
 import pandas as pd
-from tests.units.feature_extraction.data import DataAdapterTestCase
+from tests.units.feature_extraction.test_data import DataAdapterTestCase
 
 class IterableSplitTsDataTestCase(DataAdapterTestCase):
     """"""
@@ -108,20 +108,6 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
         # Test equality of each chunk...
         self.assert_tsdata(split_ts_data, expected_windowed_tuples)
 
-    # # Duplicated methods prob just inherit from other one...
-    # def assert_split_tsdata(self, data, expected):
-    #     self.assertEqual(len(data), len(expected))
-    #     self.assertEqual(sum(1 for _ in data), len(data))
-    #     for window, expected_window in zip(data, expected):
-    #         self.assert_data_window_object_equal(window, expected_window)
-
-    # # def assert_data_window_object_equal(self, window_result, window_expected):
-    # #     print("Window result")
-    # #     print(window_result)
-    # #     window_result_key = str(window_result.id) + "_" + str(window_result.kind)
-    # #     window_expected_key = str(window_expected[0]) + "_" + str(window_expected[1])
-    # #     self.assertEqual(window_result_key, window_expected_key)
-    # #     pd.testing.assert_series_equal(window_result.data, window_expected[2], check_names = False)
         
     def test_len(self):
         (

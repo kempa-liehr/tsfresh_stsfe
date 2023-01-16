@@ -59,19 +59,6 @@ class DataAdapterTestCase(DataTestCase):
         self.assert_data_chunk_object_equal(data, expected)
 
     def assert_data_chunk_object_equal(self, result, expected):
-        print("SHOWING WHAT RESULT LOOKS LIKE")
-        print("RESULT")
-        print(result)
-        print("ITERATING THROUGH")
-        for x in result:
-            print("printing x")
-            print(x)
-            print("printing x[0]")
-            print(x[0])
-            print("printing x[1]")
-            print(x[1])
-            print("printing x[2]")
-            print(x[2])
         dic_result = {str(x[0]) + "_" + str(x[1]): x[2] for x in result}
         dic_expected = {str(x[0]) + "_" + str(x[1]): x[2] for x in expected}
         for k in dic_result.keys():
