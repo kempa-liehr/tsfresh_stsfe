@@ -6,31 +6,6 @@ from tests.units.feature_extraction.test_data import DataAdapterTestCase
 class IterableSplitTsDataTestCase(DataAdapterTestCase):
     """"""
 
-    # def test_invalid_split_size(self):
-    #     (
-    #         flat_timeseries_container,
-    #         (column_id, column_sort, column_kind, column_value),
-    #         (_, _, _),
-    #     ) = self.create_simple_test_data_sample_wide()
-
-    #     # to_tsdata is tested for flat, stacked, and dict containers
-    #     # so we don't need to 
-    #     ts_data = to_tsdata(
-    #     flat_timeseries_container,
-    #     column_id=column_id,
-    #     column_sort=column_sort,
-    #     column_kind=column_kind,
-    #     column_value=column_value,
-    #     )
-
-    #     window_length = 20 # this length is too large given the size of the input data
-
-    #     # Expect this to handle the error elegantly...
-    #     split_ts_data = IterableSplitTsData(ts_data, split_size = window_length)
-
-    #     # Assert that the error is handled etc...
-    #     self.assertTrue(True)
-
     def test_iter_on_long_data(self):
         df_stacked = self.create_test_data_sample()
         data_stacked = LongTsFrameAdapter(df_stacked, "id", "kind", "val", "sort")
@@ -78,6 +53,7 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
 
     def test_iter_on_wide_data_no_sort_column(self):
         df_wide = self.create_test_data_sample_wide()
+        del df_wide["sort"]
         data_wide_no_sort = WideTsFrameAdapter(df_wide, "id", None)
 
         expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples_wide()
@@ -99,22 +75,47 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
         expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples()
         split_ts_data = IterableSplitTsData(data_dict, split_size = window_length)
 
-        # Test equality of object's main members
+        # Test equality of object's main members i.e each timeseries
         self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
         underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
         expected_non_windowed_tuples = self.create_test_data_expected_tuples()
         self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
 
-        # Test equality of each chunk...
+        # Test equality of each chunk... i.e. each subwindow
         self.assert_tsdata(split_ts_data, expected_windowed_tuples)
+
+
+    def test_too_large_split_size(self):
+
+        window_length = 1000 # this length is too large given the size of the input data
+
+        # Assert that the error is handled etc...
+        self.assertTrue(True)
+
+    def test_negative_split_size(self):
+
+        window_length = -20 # this length is too large given the size of the input data
+
+        # Assert that the error is handled etc...
+        self.assertTrue(True)
+
+    def test_zero_split_size(self):
+
+        window_length = 0 # this length is too large given the size of the input data
+
+        # Assert that the error is handled etc...
+        self.assertTrue(True)
+
+    def test_fractional_split_size(self):
+        # This should work ideally... 
+
+        window_length = 1.50
 
     def test_pivot(self):
         # Test pivot
-        assert True
+        self.assertTrue(True)
 
     ### Insert other tests related to functionality, edge cases etc.
-
-    ### Also very important to test for the different data formats!
 
 
 class ApplyableSplitTsDataTestCase(DataAdapterTestCase):

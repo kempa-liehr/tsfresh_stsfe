@@ -59,13 +59,7 @@ class DataAdapterTestCase(DataTestCase):
         self.assertEqual(sum(1 for _ in data), len(data))
         self.assert_data_chunk_object_equal(data, expected)
 
-    def assert_data_chunk_object_equal(self, result, expected):
-        for r, e in zip(result, expected):
-            print("r")
-            print(r)
-            print("e")
-            print(e)
-        
+    def assert_data_chunk_object_equal(self, result, expected):        
         dic_result = {str(x[0]) + "_" + str(x[1]): x[2] for x in result}
         dic_expected = {str(x[0]) + "_" + str(x[1]): x[2] for x in expected}
         for k in dic_result.keys():

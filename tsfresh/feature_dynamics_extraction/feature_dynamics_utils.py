@@ -7,7 +7,7 @@ from typing import List
 from md2pdf.core import md2pdf
 from tsfresh.feature_extraction import feature_calculators
 from tsfresh.utilities.string_manipulation import get_config_from_string
-from tsfresh.feature_extraction.data import to_tsdata, Timeseries, WideTsFrameAdapter,LongTsFrameAdapter,TsDictAdapter, _get_value_columns
+from tsfresh.feature_extraction.data import to_tsdata, Timeseries, WideTsFrameAdapter,LongTsFrameAdapter,TsDictAdapter
 
 
 
@@ -214,8 +214,9 @@ def diff_within_series(timeseries_container, column_id:str = None, column_sort:s
     # Case 1: Flat
     if isinstance(data, WideTsFrameAdapter):
         timeseries_container_cp = timeseries_container.copy()
-        new_kinds = [f'dt_{kind}' for kind in _get_value_columns(timeseries_container, column_id, column_sort)]  
-        timeseries_container_cp[new_kinds] = timeseries_container[_get_value_columns(timeseries_container, column_id, column_sort)].groupby(column_id).diff().fillna(0)
+        new_kinds = [f'dt_{kind}' for kind in timeseries_container.drop([column_id, column_sort], axis=1)]  
+        timeseries_container_cp[new_kinds] = timeseries_container.drop(column_sort,axis=1).groupby(column_id).diff().fillna(0)
+
     
     # Case 2: Stacked
     elif isinstance(data, LongTsFrameAdapter):
@@ -275,7 +276,7 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
         # Case 1: Flat
         if isinstance(data, WideTsFrameAdapter):
             timeseries_container_cp = timeseries_container.copy()
-            for first_kind, second_kind in combinations(_get_value_columns(timeseries_container, column_id, column_sort), r=2):
+            for first_kind, second_kind in combinations(timeseries_container.drop([column_id, column_sort], axis=1), r=2):
                 new_kind = f'D_{first_kind}{second_kind}'
                 timeseries_container_cp[new_kind] = timeseries_container_cp.set_index([column_id, column_sort])[first_kind].subtract(timeseries_container_cp.set_index([column_id,column_sort])[second_kind]).reset_index([column_id, column_sort]).drop([column_id, column_sort], axis=1)
 
