@@ -752,7 +752,7 @@ class DataTestCase(TestCase):
                     29,
                     43,
                 ],
-                index=list(range(20)),
+                index=[10] * 20,
             ),
         ),
         (
@@ -781,7 +781,7 @@ class DataTestCase(TestCase):
                     38,
                     55,
                 ],
-                index=list(range(20)),
+                index=[10] * 20,
             ),
         ),
         (
@@ -810,7 +810,7 @@ class DataTestCase(TestCase):
                     73,
                     77,
                 ],
-                index=list(range(20, 40)),
+                index=[500] * 20,
             ),
         ),
         (
@@ -839,7 +839,7 @@ class DataTestCase(TestCase):
                     54,
                     13,
                 ],
-                index=list(range(20, 40)),
+                index=[500] * 20,
             ),
         ),
     ]
@@ -1034,15 +1034,15 @@ class DataTestCase(TestCase):
             ],
             index=[10] * 6
         )),
-        ((10,0),
+        ((10,1),
         'b',
         pd.Series(
             [
-               21,61,39,31,52,16
+               21,61,39,31,53,16
             ],
             index=[10] * 6
         )),
-        ((10,0),
+        ((10,2),
         'b',
         pd.Series(
             [
@@ -1050,7 +1050,7 @@ class DataTestCase(TestCase):
             ],
             index=[10] * 6
         )),
-        ((10,0),
+        ((10,3),
         'b',
         pd.Series(
             [
@@ -1169,185 +1169,196 @@ class DataTestCase(TestCase):
         'a',
         pd.Series(
             [
-               36,
-               71,
-               27,
-               62,
-               56,
-               58
+               11,
+               9,
+               67,
+               45,
+               30,
+               58,
             ],
-            index=[10] * 6
+            index=list(range(6))
         )),
         ((10,1),
         'a',
         pd.Series(
             [
-               67,
-               11,
-               2,
-               24,
-               45,
-               30 
+               62,
+               19,
+               56,
+               29,
+               0,
+               27,
             ],
-            index=[10] * 6
+            index=list(range(6,12))
         )),
         ((10,2),
         'a',
         pd.Series(
             [
-               0,
-               9,
-               41,
-               28,
+               36,
+               43,
                33,
-               19
+               2,
+               24,
+               71,
             ],
-            index=[10] * 6
+            index=list(range(12,18))
         )),
         ((10,3),
         'a',
         pd.Series(
             [
-               29,
-               43 
+               41,
+               28,
             ],
-            index=[10] * 2
+            index=list(range(18,20))
         )),
         # 4 chunks with id: 10, kind: 'b'
         ((10,0),
         'b',
         pd.Series(
             [
-               78,
-               37,
+               50,
+               40,
+               39,
+               7,
+               53,
                23,
-               44,
+            ],
+            index=list(range(6))
+        )),
+        ((10,1),
+        'b',
+        pd.Series(
+            [
+               16,
+               37,
+               66,
+               38,
                6,
-               3
+               47,
             ],
-            index=[10] * 6
+            index=list(range(6,12))
         )),
-        ((10,0),
+        ((10,2),
         'b',
         pd.Series(
             [
-               21,61,39,31,52,16
+              3,
+              61,
+              44,
+              42,
+              78,
+              31,
             ],
-            index=[10] * 6
+            index=list(range(12,18))
         )),
-        ((10,0),
+        ((10,3),
         'b',
         pd.Series(
             [
-              66,50,40,47,7,42
+               21,
+               55,
             ],
-            index=[10] * 6
-        )),
-        ((10,0),
-        'b',
-        pd.Series(
-            [
-               38,55
-            ],
-            index=[10] * 2
+            index=list(range(18,20))
         )),
         # 4 chunks with id: 500, kind: 'a'
         ((500,0),
         'a',
         pd.Series(
             [
-               76,
-               72,
-               74,
-               75,
+               15,
+               35,
+               25,
                32,
-               64
+               69,
+               65,
             ],
-            index=[500] * 6
+            index=list(range(20,26))
         )),
         ((500,1),
         'a',
         pd.Series(
             [
-               46,
-               35,
-               15,
                70,
-               57,
-               65
+               64,
+               51,
+               46,
+               5,
+               77,
             ],
-            index=[500] * 6
+            index=list(range(26,32))
         )),
         ((500,2),
         'a',
         pd.Series(
             [
-               51,
                26,
-               5,
-               25,
-               10,
-               69
+               73,
+               76,
+               75,
+               72,
+               74,
             ],
-            index=[500] * 6
+            index=list(range(32,38))
         )),
         ((500,3),
         'a',
         pd.Series(
             [
-               73,
-               77 
+               10,
+               57,
             ],
-            index=[500] * 2
+            index=list(range(38,40))
         )),
         # 4 chunks with id: 500, kind: 'b'
         ((500,0),
         'b',
         pd.Series(
             [
-               8,
-               60,
-               12,
+               4,
+               14,
                68,
                22,
-               17     
+               18,
+               52,  
             ],
-            index=[500] * 6
+            index=list(range(20,26))
         )),
         ((500,1),
         'b',
         pd.Series(
             [
-               18,
-               63,
+               54,
+               60,
+               79,
+               12,
                49,
-               34,
-               20,
-               52 
+               63,
             ],
-            index=[500] * 6
+            index=list(range(26,32))
         )),
         ((500,2),
         'b',
         pd.Series(
             [
-               48,
-               14,
-               79,
-               4,
+               8,
+               59,
                1,
-               59 
+               13,
+               20,
+               17,
             ],
-            index=[500] * 6
+            index=list(range(32,38))
         )),
         ((500,3),
         'b',
         pd.Series(
             [
-               54,
-               13 
+               48,
+               34,
             ],
-            index=[500] * 2
+            index=list(range(38,40))
         )),
         ]
         return (wide_test_data_expected_chunked_up_tuples, window_length)

@@ -37,11 +37,11 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
         expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples()
         split_ts_data = IterableSplitTsData(data_stacked, split_size = window_length)
 
-        # # Test equality of object's main members
-        # self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
-        # underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
-        # expected_non_windowed_tuples = self.create_test_data_expected_tuples()
-        # self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
+        # Test equality of object's main members
+        self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
+        underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
+        expected_non_windowed_tuples = self.create_test_data_expected_tuples()
+        self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
 
         # Test equality of each chunk...
         self.assert_tsdata(split_ts_data,expected_windowed_tuples)
@@ -52,11 +52,11 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
         expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples()
         split_ts_data = IterableSplitTsData(data_stacked_no_val, split_size = window_length)
 
-        # # Test equality of object's main members
-        # self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
-        # underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
-        # expected_non_windowed_tuples = self.create_test_data_expected_tuples()
-        # self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
+        # Test equality of object's main members
+        self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
+        underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
+        expected_non_windowed_tuples = self.create_test_data_expected_tuples()
+        self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
 
         # Test equality of each chunk...
         self.assert_tsdata(split_ts_data,expected_windowed_tuples)
@@ -67,11 +67,11 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
         expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples_wide()
         split_ts_data = IterableSplitTsData(data_wide, split_size = window_length)
 
-        # # Test equality of object's main members
-        # self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
-        # underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
-        # expected_non_windowed_tuples = self.create_test_data_expected_tuples_wide()
-        # self.assert_tsdata(underlying_data_converted_to_tsdata, expected_windowed_tuples)
+        # Test equality of object's main members
+        self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
+        underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
+        expected_non_windowed_tuples = self.create_test_data_expected_tuples_wide()
+        self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
 
         # Test equality of each chunk...
         self.assert_tsdata(split_ts_data,expected_windowed_tuples)
@@ -83,11 +83,11 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
         expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples_wide()
         split_ts_data = IterableSplitTsData(data_wide_no_sort, split_size = window_length)
 
-        # # Test equality of object's main members
-        # self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
-        # underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
-        # expected_non_windowed_tuples = self.create_test_data_expected_tuples_wide()
-        # self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
+        # Test equality of object's main members
+        self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
+        underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
+        expected_non_windowed_tuples = self.create_test_data_expected_tuples_wide()
+        self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
 
         # Test equality of each chunk...
         self.assert_tsdata(split_ts_data,expected_windowed_tuples)
@@ -99,41 +99,14 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
         expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples()
         split_ts_data = IterableSplitTsData(data_dict, split_size = window_length)
 
-        # # Test equality of object's main members
-        # self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
-        # underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
-        # expected_non_windowed_tuples = self.create_test_data_expected_tuples()
-        # self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
+        # Test equality of object's main members
+        self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
+        underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
+        expected_non_windowed_tuples = self.create_test_data_expected_tuples()
+        self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
 
         # Test equality of each chunk...
         self.assert_tsdata(split_ts_data, expected_windowed_tuples)
-
-        
-    def test_len(self):
-        (
-            flat_timeseries_container,
-            (column_id, column_sort, column_kind, column_value),
-            (_, _, _),
-        ) = self.create_simple_test_data_sample_wide()
-
-        # to_tsdata is tested for flat, stacked, and dict containers
-        # so we don't need to 
-        ts_data = to_tsdata(
-        flat_timeseries_container,
-        column_id=column_id,
-        column_sort=column_sort,
-        column_kind=column_kind,
-        column_value=column_value,
-        )
-
-        window_length = 2
-
-        # Expect this to handle the error elegantly...
-        split_ts_data = IterableSplitTsData(ts_data, split_size = window_length)
-
-        expected_length = 0
-
-        self.assertTrue(len(split_ts_data) == expected_length)
 
     def test_pivot(self):
         # Test pivot

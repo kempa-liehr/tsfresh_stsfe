@@ -34,6 +34,7 @@ class DataAdapterTestCase(DataTestCase):
     def test_wide_tsframe(self):
         df = self.create_test_data_sample_wide()
         data = WideTsFrameAdapter(df, "id", "sort")
+        # I think test is wrong here - wide df is wrong...
         wide_test_data_expected_tuples = self.create_test_data_expected_tuples_wide()
 
         self.assert_tsdata(data, wide_test_data_expected_tuples)
@@ -59,6 +60,12 @@ class DataAdapterTestCase(DataTestCase):
         self.assert_data_chunk_object_equal(data, expected)
 
     def assert_data_chunk_object_equal(self, result, expected):
+        for r, e in zip(result, expected):
+            print("r")
+            print(r)
+            print("e")
+            print(e)
+        
         dic_result = {str(x[0]) + "_" + str(x[1]): x[2] for x in result}
         dic_expected = {str(x[0]) + "_" + str(x[1]): x[2] for x in expected}
         for k in dic_result.keys():
