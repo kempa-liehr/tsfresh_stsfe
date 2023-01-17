@@ -450,8 +450,6 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
 class EngineerTimeSeriesTestCase(DataTestCase):
     """"""
 
-    # TODO: Add tests where column_sort not provided... (cc: Louis)
-
     def test_diff_within_series_flat(self):
         (
             flat_timeseries_container,
@@ -482,6 +480,14 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             }
         )
         self.assertTrue(engineered_ts_within.equals(expected_engineered_ts_within))
+
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        expected_unmodified_data, *_ = self.create_simple_test_data_sample_wide()
+        self.assertTrue(
+            flat_timeseries_container.equals(expected_unmodified_data)
+        )
 
     def test_differences_within_stacked_dataframe(self):
         (
@@ -524,6 +530,14 @@ class EngineerTimeSeriesTestCase(DataTestCase):
 
         self.assertTrue(engineered_ts_within.equals(expected_engineered_ts_within))
 
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        expected_unmodified_data, *_ = self.create_simple_test_data_sample_stacked()
+        self.assertTrue(
+            stacked_dataframe_timeseries_container.equals(expected_unmodified_data)
+        )
+
     def test_differences_within_dictionary(self):
 
         (
@@ -562,6 +576,15 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             == testable_dictionary_of_dataframes(expected_engineered_ts_within)
         )
 
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        expected_unmodified_data, *_ = self.create_simple_test_data_sample_dict()
+        self.assertTrue(
+            testable_dictionary_of_dataframes(dict_timeseries_container)
+            == testable_dictionary_of_dataframes(expected_unmodified_data)
+        )
+
     def test_diff_between_series_flat(self):
         (
             flat_timeseries_container,
@@ -595,6 +618,14 @@ class EngineerTimeSeriesTestCase(DataTestCase):
         )
 
         self.assertTrue(engineered_ts_between.equals(expected_engineered_ts_between))
+
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        expected_unmodified_data, *_ = self.create_simple_test_data_sample_wide()
+        self.assertTrue(
+            flat_timeseries_container.equals(expected_unmodified_data)
+        )
 
     def test_diff_between_series_wide_dataframe(self):
         (
@@ -635,6 +666,14 @@ class EngineerTimeSeriesTestCase(DataTestCase):
 
         self.assertTrue(engineered_ts_between.equals(expected_engineered_ts_between))
 
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        expected_unmodified_data, *_ = self.create_simple_test_data_sample_stacked()
+        self.assertTrue(
+            stacked_dataframe_timeseries_container.equals(expected_unmodified_data)
+        )
+
     def test_differences_between_dictionary(self):
 
         (
@@ -668,22 +707,32 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             )
             for (y_name, y_values) in expected_ys.items()
         }
+
+        # Check expected output
         self.assertTrue(
             testable_dictionary_of_dataframes(engineered_ts_between)
             == testable_dictionary_of_dataframes(expected_engineered_ts_between)
         )
 
-
-    def test_differences_within_pass_by_value(self):
-        pass
-
-    def test_differences_between_pass_by_value(self):
-        pass
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        expected_unmodified_data, *_ = self.create_simple_test_data_sample_dict()
+        self.assertTrue(
+            testable_dictionary_of_dataframes(dict_timeseries_container)
+            == testable_dictionary_of_dataframes(expected_unmodified_data)
+        )
 
     def test_diff_within_series_no_sort_provided(self):
+        """
+        For louis
+        """
         pass
 
     def test_diff_between_series_no_sort_provided(self):
+        """
+        For louis
+        """
         pass
 
 

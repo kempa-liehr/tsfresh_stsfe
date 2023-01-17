@@ -49,7 +49,6 @@ class IterableSplitTsData(PartitionedTsData):
         # so it is an object
         self.df_id_type = object
 
-
     def __iter__(self):
         """Iterate over the root ts data object and only return small chunks of the data"""
         tsdata = iter(self._root_ts_data)
