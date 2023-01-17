@@ -1,6 +1,7 @@
 from tsfresh.feature_extraction.data import to_tsdata, LongTsFrameAdapter,WideTsFrameAdapter,TsDictAdapter
-from tsfresh.feature_dynamics_extraction.feature_dynamics_data import IterableSplitTsData
+from tsfresh.feature_dynamics_extraction.feature_dynamics_data import IterableSplitTsData, ApplyableSplitTsData
 import pandas as pd
+import dask.dataframe as dd
 from tests.units.feature_extraction.test_data import DataAdapterTestCase
 
 class IterableSplitTsDataTestCase(DataAdapterTestCase):
@@ -117,24 +118,45 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
 
         self.assertRaises(ValueError, IterableSplitTsData, test_data, window_length)
 
-    def test_pivot(self):
-        # Test pivot
-        self.assertTrue(True)
-
-    ### Insert other tests related to functionality, edge cases etc.
-
-
 class ApplyableSplitTsDataTestCase(DataAdapterTestCase):
     """ """
 
-    def test_init(self):
-        assert True
+    def test_iter_on_long_data_dask(self):
+        df_stacked = dd.from_pandas(self.create_test_data_sample(), npartitions=2)
+        data_stacked = LongTsFrameAdapter(df_stacked, "id", "kind", "val", "sort")
+        expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples()
+        split_ts_data = ApplyableSplitTsData(data_stacked, split_size = window_length)
 
-    def test_apply(self):
-        assert True
+        # Test equality of object's main members
+        self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
+        underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
+        expected_non_windowed_tuples = self.create_test_data_expected_tuples()
+        self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
 
-    def test_wrapped_f(self):
-        assert True
+        # Test equality of each chunk...
+        self.assert_tsdata(split_ts_data,expected_windowed_tuples)
 
-    def test_pivot(self):
-        assert True
+
+    def test_iter_on_long_data_no_value_column_dask(self):
+        pass
+
+    def test_iter_on_wide_data_dask(self):
+        pass
+
+    def test_iter_on_wide_data_no_sort_column_dask(self):
+        pass
+
+    def test_iter_on_dict_dask(self):
+        pass
+
+    def test_too_large_split_size_dask(self):
+        pass
+
+    def test_negative_split_size_dask(self):
+        pass
+
+    def test_zero_split_size_dask(self):
+        pass
+
+    def test_fractional_split_size_dask(self):
+        pass

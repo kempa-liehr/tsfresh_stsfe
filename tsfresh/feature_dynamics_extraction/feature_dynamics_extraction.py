@@ -95,7 +95,11 @@ def extract_feature_dynamics(
 
         Xs.append(X)
 
-    return pd.concat(Xs, axis=1)
+    if isinstance(X, dd.DataFrame):
+        return dd.multi.concat(Xs, axis=1)
+    else:
+        pd.concat(Xs, axis=1)
+
 
 
 def do_feature_dynamics_extraction(

@@ -324,7 +324,7 @@ class TsDictAdapter(PartitionedTsData):
     def __len__(self):
         return sum(grouped_df.ngroups for grouped_df in self.grouped_dict.values())
 
-class DaskTsAdapter(TsData):
+class DaskTsAdapter(ApplyableTsData):
     def __init__(
         self, df, column_id, column_kind=None, column_value=None, column_sort=None
     ):
@@ -388,6 +388,7 @@ class DaskTsAdapter(TsData):
         self.column_kind = column_kind
         self.column_value = column_value
         self.column_sort = column_sort
+        self.df_id_type = df[column_id].dtype
 
     def apply(self, f, meta, **kwargs):
         """

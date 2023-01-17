@@ -14,7 +14,6 @@ from tsfresh.feature_selection import select_features
 from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
     derive_features_dictionaries,
     gen_pdf_for_feature_dynamics,
-    engineer_input_timeseries,
 )
 
 # NOTE: The intent of this file is NOT to be a test suite but more of a "debug playground"
@@ -361,10 +360,10 @@ if __name__ == "__main__":
     ###############################
     ###############################
     # Control variables here
-    run_dask = False
-    run_pandas = True
-    run_efficient = True
-    run_minimal = False
+    run_dask = True
+    run_pandas = False
+    run_efficient = False
+    run_minimal = True
     run_select = True
     run_extract_on_selected = True
     engineer_more_ts = False
@@ -388,28 +387,28 @@ if __name__ == "__main__":
     container_type = "dask" if run_dask else "pandas"
     ts, response = gen_example_timeseries_data(container_type=container_type)
 
-    # Engineer some input timeseries
-    if engineer_more_ts:
-        if run_dask:
-            ts = ts.compute()
+    # # Engineer some input timeseries
+    # if engineer_more_ts:
+    #     if run_dask:
+    #         ts = ts.compute()
 
-        ts = engineer_input_timeseries(
-            timeseries=ts,
-            column_sort="t",
-            column_id="measurement_id",
-            compute_differences_within_series=True,
-            compute_differences_between_series=True,
-        )
+    #     ts = engineer_input_timeseries(
+    #         timeseries=ts,
+    #         column_sort="t",
+    #         column_id="measurement_id",
+    #         compute_differences_within_series=True,
+    #         compute_differences_between_series=True,
+    #     )
 
-        # Include second order differences:.
-        ts = ts.merge(
-            engineer_input_timeseries(timeseries=ts[["dt_y1", "dt_y2", "dt_y3"]])
-        )
-        print(ts)
+    #     # Include second order differences:.
+    #     ts = ts.merge(
+    #         engineer_input_timeseries(timeseries=ts[["dt_y1", "dt_y2", "dt_y3"]])
+    #     )
+    #     print(ts)
 
-        if run_dask:
-            # turn pandas back to dask after engineering more input timeseries
-            ts = dd.from_pandas(ts, npartitions=3)
+    #     if run_dask:
+    #         # turn pandas back to dask after engineering more input timeseries
+    #         ts = dd.from_pandas(ts, npartitions=3)
 
     print(f"\nTime series input:\n\n{ts}")
     print(f"\nTime series response vector:\n\n{response}")

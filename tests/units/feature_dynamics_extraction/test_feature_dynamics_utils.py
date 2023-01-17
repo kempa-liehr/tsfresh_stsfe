@@ -673,6 +673,13 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             == testable_dictionary_of_dataframes(expected_engineered_ts_between)
         )
 
+
+    def test_differences_within_pass_by_value(self):
+        pass
+
+    def test_differences_between_pass_by_value(self):
+        pass
+
     def test_diff_within_series_no_sort_provided(self):
         pass
 
