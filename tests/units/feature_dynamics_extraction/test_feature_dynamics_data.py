@@ -87,29 +87,35 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
 
     def test_too_large_split_size(self):
 
-        window_length = 1000 # this length is too large given the size of the input data
+        window_length = 100000 # this length is too large given the size of the input data
 
-        # Assert that the error is handled etc...
-        self.assertTrue(True)
+        test_data = to_tsdata(self.create_test_data_sample(), 'id','kind','val','sort')
+
+        self.assertRaises(ValueError, IterableSplitTsData, test_data, window_length)
 
     def test_negative_split_size(self):
 
-        window_length = -20 # this length is too large given the size of the input data
+        window_length = -20
 
-        # Assert that the error is handled etc...
-        self.assertTrue(True)
+        test_data = to_tsdata(self.create_test_data_sample(), 'id','kind','val','sort')
+
+        self.assertRaises(ValueError, IterableSplitTsData, test_data, window_length)
 
     def test_zero_split_size(self):
 
         window_length = 0 # this length is too large given the size of the input data
 
-        # Assert that the error is handled etc...
-        self.assertTrue(True)
+        test_data = to_tsdata(self.create_test_data_sample(), 'id','kind','val','sort')
+
+        self.assertRaises(ValueError, IterableSplitTsData, test_data, window_length)
 
     def test_fractional_split_size(self):
-        # This should work ideally... 
 
-        window_length = 1.50
+        window_length = 1.50 # does not make physical sense to have non integer window lengths
+
+        test_data = to_tsdata(self.create_test_data_sample(), 'id','kind','val','sort')
+
+        self.assertRaises(ValueError, IterableSplitTsData, test_data, window_length)
 
     def test_pivot(self):
         # Test pivot
