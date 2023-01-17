@@ -10,7 +10,9 @@ from tsfresh.feature_extraction.data import (
     ApplyableTsData,
     Timeseries,
 )
+from collections.abc import Iterable
 import math
+from warnings import warn
 
 
 class IterableSplitTsData(PartitionedTsData):
@@ -25,12 +27,28 @@ class IterableSplitTsData(PartitionedTsData):
 
     def __init__(self, root_ts_data, split_size):
         """Initialize with the root ts data object and the size to split"""
+        
+        if not isinstance(split_size,int) or split_size <= 0:
+            raise ValueError(f"Expecting `split_size` to be a integer but found {split_size} of type {type(split_size)}")
+        
+        if split_size <= 0:
+            raise ValueError(f"Expecting `split_size` to be positive")
+
+        length_of_smallest_timeseries = root_ts_data.get_length_of_smallest_timeseries()
+        length_of_largest_timeseries = root_ts_data.get_length_of_largest_timeseries()
+        
+        if split_size > length_of_smallest_timeseries:
+            raise ValueError(f"Cannot split timeseries' into chunks of {split_size}... `split_size` is too large compared to the length of the timeseries. `split_size` needs to be smaller than {length_of_smallest_timeseries}")
+        
+        if length_of_largest_timeseries != length_of_smallest_timeseries:
+            warn("The timeseries have different lengths")
+        
         self._root_ts_data = root_ts_data
         self._split_size = split_size
-
         # The resulting type will be a tuple (id, chunk number),
         # so it is an object
         self.df_id_type = object
+
 
     def __iter__(self):
         """Iterate over the root ts data object and only return small chunks of the data"""
@@ -63,7 +81,6 @@ class IterableSplitTsData(PartitionedTsData):
     def pivot(self, results):
         """Pivoting can be copied from the root ts object"""
         return self._root_ts_data.pivot(results)
-
 
 class ApplyableSplitTsData(ApplyableTsData):
     """

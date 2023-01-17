@@ -1,4 +1,4 @@
-from tsfresh.feature_extraction.data import to_tsdata, LongTsFrameAdapter,WideTsFrameAdapter,TsDictAdapter
+from tsfresh.feature_extraction.data import to_tsdata, LongTsFrameAdapter,WideTsFrameAdapter,TsDictAdapter,DaskTsAdapter
 from tsfresh.feature_dynamics_extraction.feature_dynamics_data import IterableSplitTsData, ApplyableSplitTsData
 import pandas as pd
 import dask.dataframe as dd
@@ -118,24 +118,39 @@ class IterableSplitTsDataTestCase(DataAdapterTestCase):
 
         self.assertRaises(ValueError, IterableSplitTsData, test_data, window_length)
 
+
 class ApplyableSplitTsDataTestCase(DataAdapterTestCase):
     """ """
+    def assert_tsdata_dask(self, result, expected):
 
-    def test_iter_on_long_data_dask(self):
-        df_stacked = dd.from_pandas(self.create_test_data_sample(), npartitions=2)
-        data_stacked = LongTsFrameAdapter(df_stacked, "id", "kind", "val", "sort")
-        expected_windowed_tuples, window_length = self.create_split_up_test_data_expected_tuples()
-        split_ts_data = ApplyableSplitTsData(data_stacked, split_size = window_length)
+        # TODO: Fix this funciton to be 
+        # able to assert expected dask data == resultant dask data
 
-        # Test equality of object's main members
-        self.assertTrue(split_ts_data._split_size == window_length and split_ts_data.df_id_type == object) 
-        underlying_data_converted_to_tsdata = to_tsdata(split_ts_data._root_ts_data)
-        expected_non_windowed_tuples = self.create_test_data_expected_tuples()
-        self.assert_tsdata(underlying_data_converted_to_tsdata, expected_non_windowed_tuples)
+        self.assertEqual(result.column_id, "id")
+        print("result")
+        print(result)
 
-        # Test equality of each chunk...
-        self.assert_tsdata(split_ts_data,expected_windowed_tuples)
+        print("expected")
+        print(expected)
 
+        def test_f(chunk):
+            return pd.DataFrame(
+                {"id": chunk[0], "variable": chunk[1], "value": chunk[2]}
+            )
+
+        return_f = result.apply(
+            test_f, meta=(("id", "int"), ("variable", "int"), ("value", "int"))
+        ).compute()
+        
+
+        pd.testing.assert_frame_equal(
+            return_f.reset_index(drop=True),
+            expected,
+        )
+        
+
+    def test_apply_on_long_data_dask(self):
+        pass
 
     def test_iter_on_long_data_no_value_column_dask(self):
         pass

@@ -36,6 +36,12 @@ class Timeseries(namedtuple("Timeseries", ["id", "kind", "data"])):
     of feature settings in `feature_extraction.settings.from_columns`.
     """
 
+    def __len__(self):
+        """
+        Gets number of datapoints in the timeseries
+        """
+        return len(self.data.index)
+
 
 class TsData:
     """
@@ -106,6 +112,14 @@ class PartitionedTsData(Iterable[Timeseries], Sized, TsData):
         return_df = return_df.sort_index()
 
         return return_df
+
+    def get_length_of_smallest_timeseries(self):
+        smallest_timeseries = min(self, key = len)
+        return len(smallest_timeseries)
+
+    def get_length_of_largest_timeseries(self):
+        largest_timeseries = max(self, key = len)
+        return len(largest_timeseries)
 
 
 def _check_colname(*columns):
@@ -339,7 +353,7 @@ class DaskTsAdapter(ApplyableTsData):
             df, column_id, column_sort, column_kind
         )
 
-        # The user has already a kind column. That means we just need to group by id (and additionally by id)
+        # The user has already a kind column. That means we just need to group by id (and additionally by kind)
         if column_kind is not None:
             if column_kind not in df.columns:
                 raise ValueError(f"Column not found: {column_kind}")
