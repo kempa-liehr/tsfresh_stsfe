@@ -521,7 +521,6 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
         expected_engineered_ts_within = pd.DataFrame(
             {
                 column_id: flat_timeseries_container[column_id].tolist(),
-                column_sort: flat_timeseries_container[column_sort].tolist(),
                 "y1": y1,
                 "y2": y2,
                 "y3": y3,
@@ -542,13 +541,13 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             flat_timeseries_container, expected_unmodified_data
         )
 
-    def test_differences_within_stacked_dataframe_no_sort(self):
+    def test_differences_within_stacked_dataframe(self):
         (
             stacked_dataframe_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
         ) = self.create_simple_test_data_sample_stacked(
-            randomise_sort_order=False, column_sort_is_none = True
-        ) 
+            randomise_sort_order=False
+        )  # TODO: Get test working with randomise_sort_order = True
 
         expected_unmodified_data = stacked_dataframe_timeseries_container.copy(
             deep=True
@@ -598,13 +597,13 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             stacked_dataframe_timeseries_container, expected_unmodified_data
         )
 
-    def test_differences_within_stacked_dataframe(self):
+    def test_differences_within_stacked_dataframe_no_sort(self):
         (
             stacked_dataframe_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
         ) = self.create_simple_test_data_sample_stacked(
-            randomise_sort_order=False
-        )  # TODO: Get test working with randomise_sort_order = True
+            randomise_sort_order=False, column_sort_is_none = True
+        ) 
 
         expected_unmodified_data = stacked_dataframe_timeseries_container.copy(
             deep=True
@@ -632,9 +631,6 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
                     {
                         column_id: stacked_dataframe_timeseries_container[
                             column_id
-                        ].tolist(),
-                        column_sort: stacked_dataframe_timeseries_container[
-                            column_sort
                         ].tolist(),
                         column_kind: expected_within_kinds,
                         column_value: expected_within_values,
@@ -709,7 +705,7 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             dict_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
             (y1, y2, y3),
-            (id_values, sort_values),
+            (id_values, _),
         ) = self.create_simple_test_data_sample_dict(
             randomise_sort_order=False, column_sort_is_none = True
         ) 
@@ -736,15 +732,10 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
         }
         expected_engineered_ts_within = {
             y_name: pd.DataFrame(
-                {column_id: id_values, column_sort: sort_values, column_value: y_values}
+                {column_id: id_values, column_value: y_values}
             )
             for (y_name, y_values) in expected_ys.items()
         }
-
-        print("Ex")
-        print(expected_engineered_ts_within)
-        print("Res")
-        print(engineered_ts_within)
 
         self.assertTrue(
             testable_dictionary_of_dataframes(engineered_ts_within)
