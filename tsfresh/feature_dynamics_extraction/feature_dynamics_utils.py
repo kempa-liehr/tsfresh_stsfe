@@ -283,9 +283,7 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
                 timeseries_container_cp[new_kind] = timeseries_container_cp.set_index(indexing_columns)[first_kind].subtract(timeseries_container_cp.set_index(indexing_columns)[second_kind]).reset_index(indexing_columns, drop=True)
 
         # Case 2: Stacked
-        # TODO: This should also sort the existing pandas dataframes!!! If a column sort is provided
         elif isinstance(data, LongTsFrameAdapter):
-            
             def stacked_df_between_differencer(timeseries_container): 
                 yield timeseries_container
                 for first_timeseries, second_timeseries in combinations(timeseries_container.groupby(column_kind), r=2):
@@ -300,7 +298,6 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
             timeseries_container_cp = pd.concat(stacked_df_between_differencer(timeseries_container)).reset_index(drop=True)
 
         # Case 3: Dict of flat
-        # TODO: This should also sort the existing pandas dataframes!!! If a column sort is provided
         elif isinstance(data, TsDictAdapter):
 
             for first_timeseries, second_timeseries in combinations(timeseries_container.items(), r=2):

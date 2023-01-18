@@ -36,9 +36,9 @@ class IterableSplitTsData(PartitionedTsData):
 
         length_of_smallest_timeseries = root_ts_data.get_length_of_smallest_timeseries()
         length_of_largest_timeseries = root_ts_data.get_length_of_largest_timeseries()
-        
+
         if split_size > length_of_smallest_timeseries:
-            raise ValueError(f"Cannot split timeseries' into chunks of {split_size}... `split_size` is too large compared to the length of the timeseries. `split_size` needs to be smaller than {length_of_smallest_timeseries}")
+            raise ValueError(f"`split_size`: {split_size} is too large compared to the length of the timeseries. `split_size` needs to be smaller than {length_of_smallest_timeseries}")
         
         if length_of_largest_timeseries != length_of_smallest_timeseries:
             warn("The timeseries have different lengths")

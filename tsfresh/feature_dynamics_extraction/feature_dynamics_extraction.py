@@ -98,8 +98,7 @@ def extract_feature_dynamics(
     if isinstance(X, dd.DataFrame):
         return dd.multi.concat(Xs, axis=1)
     else:
-        pd.concat(Xs, axis=1)
-
+        return pd.concat(Xs, axis=1)
 
 
 def do_feature_dynamics_extraction(
@@ -296,7 +295,9 @@ def do_feature_dynamics_extraction(
     if isinstance(feature_timeseries, dd.DataFrame):
         cols_to_keep = X.isna().compute().any() == False
         X = X.loc[:, cols_to_keep.tolist()]
-    else:
+    elif isinstance(feature_timeseries, pd.DataFrame):
         X = X.dropna(axis="columns", how="any")
+    else:
+        raise ValueError
 
     return X
