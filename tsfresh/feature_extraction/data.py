@@ -353,7 +353,7 @@ class DaskTsAdapter(ApplyableTsData):
             df, column_id, column_sort, column_kind
         )
 
-        # The user has already a kind column. That means we just need to group by id (and additionally by kind)
+        # The user has already a kind column. That means we just need to group by id (and additionally by sort)
         if column_kind is not None:
             if column_kind not in df.columns:
                 raise ValueError(f"Column not found: {column_kind}")
