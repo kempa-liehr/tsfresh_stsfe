@@ -202,10 +202,6 @@ def diff_within_series(timeseries_container, column_id:str = None, column_sort:s
     returns:
          Returns the original dataframe with the engineered timeseries added as new columns
     """
-    # NOTE: Function cannot handle dask dataframes and pyspark graphs
-    # TODO: Funciton needs to handle the case where column sort is not provided, 
-    # or should not even pass in the column_sort to begin with i.e. assume already sorted...
-    # NOTE: Assumes timestamps are equidistant from each other
     data = to_tsdata(timeseries_container, column_id, column_kind, column_value, column_sort)
     
     if not isinstance(data, (WideTsFrameAdapter, LongTsFrameAdapter, TsDictAdapter)):
@@ -245,9 +241,6 @@ def diff_within_series(timeseries_container, column_id:str = None, column_sort:s
     return timeseries_container_cp
 
 
-
-
-
 def diff_between_series(timeseries_container, column_id, column_sort, column_kind, column_value):
         """
         Time series differencing with 1 order of differencing and phase difference operations to add new engineered time series to the input time series
@@ -265,9 +258,6 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
              Returns the original dataframe with the engineered timeseries added as new columns
 
         """
-        # NOTE: Assumes equidistant timestamps
-        # NOTE: Assumes timeseries are sorted
-
         timeseries_container_cp = timeseries_container.copy()
 
         data = to_tsdata(timeseries_container_cp, column_id, column_kind, column_value, column_sort)
