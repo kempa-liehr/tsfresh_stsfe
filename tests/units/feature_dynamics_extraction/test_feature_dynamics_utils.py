@@ -414,9 +414,6 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         actual_string_output = dictionary_to_string(dictionary_input)
         self.assertTrue(actual_string_output == expected_string_output)
 
-        # TODO: Test to make it break if a strange type is given i.e. not float int str or bool
-        # TODO: Test to break when there are unhashable types
-
     def test_gen_pdf_for_feature_dynamics(self):
         # This unit test is just going to call the
         # function. If there is no error, then the test passes!

@@ -366,3 +366,27 @@ class PivotListTestCase(TestCase):
         self.assertEqual(np.sum(np.sum(np.isnan(return_df))), 0)
         # test if all entries are there
         self.assertEqual(return_df.sum().sum(), 24502500)
+
+
+class PartitionedTsDataTestCase(DataTestCase):
+    """
+    Tests methods for PartitionedTsData
+    """
+
+    def test_get_length_of_largest_and_smallest_timeseries(self):
+
+        # TODO: Factor out calls to other methods i.e. to_tsdata() !!!! 
+
+        test_data = pd.DataFrame({"id":[1,1,1,1,1,1,1,1,2,2,2], "sort":[1,2,3,4,5,7,8,9,1,2,3], "kind":11*["a"], "value":11*[5]})
+
+        expected_length_of_largest_timeseries = 8
+        expected_length_of_smallest_timeseries = 3
+
+        ts_data = to_tsdata(test_data, column_id="id", column_kind="kind", column_value="value", column_sort="sort")
+
+        
+
+        length_of_largest_timeseries = ts_data.get_length_of_largest_timeseries()
+        length_of_smallest_timeseries = ts_data.get_length_of_smallest_timeseries()
+
+        self.assertTrue(expected_length_of_largest_timeseries == length_of_largest_timeseries and expected_length_of_smallest_timeseries == length_of_smallest_timeseries)
