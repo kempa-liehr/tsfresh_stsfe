@@ -1,6 +1,6 @@
 import math
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock 
 
 import numpy as np
 import pandas as pd
@@ -13,8 +13,10 @@ from tsfresh.feature_extraction.data import (
     TsDictAdapter,
     WideTsFrameAdapter,
     to_tsdata,
+    Timeseries
 )
 from tsfresh.utilities.distribution import MultiprocessingDistributor
+
 
 class DataAdapterTestCase(DataTestCase):
     def test_long_tsframe(self):
@@ -377,16 +379,14 @@ class PartitionedTsDataTestCase(DataTestCase):
 
         # TODO: Factor out calls to other methods i.e. to_tsdata() !!!! 
 
-        test_data = pd.DataFrame({"id":[1,1,1,1,1,1,1,1,2,2,2], "sort":[1,2,3,4,5,7,8,9,1,2,3], "kind":11*["a"], "value":11*[5]})
+        df = pd.DataFrame({"id":[1,1,1,1,1,1,1,1,2,2,2], "sort":[1,2,3,4,5,7,8,9,1,2,3], "kind":11*["a"], "val":11*[5]})
+        test_data = LongTsFrameAdapter(df, "id", "kind", "val", "sort") # (maybe) TODO: Mock this object
 
         expected_length_of_largest_timeseries = 8
         expected_length_of_smallest_timeseries = 3
 
-        ts_data = to_tsdata(test_data, column_id="id", column_kind="kind", column_value="value", column_sort="sort")
+        length_of_largest_timeseries = test_data.get_length_of_largest_timeseries()
+        length_of_smallest_timeseries = test_data.get_length_of_smallest_timeseries()
 
-        
-
-        length_of_largest_timeseries = ts_data.get_length_of_largest_timeseries()
-        length_of_smallest_timeseries = ts_data.get_length_of_smallest_timeseries()
-
-        self.assertTrue(expected_length_of_largest_timeseries == length_of_largest_timeseries and expected_length_of_smallest_timeseries == length_of_smallest_timeseries)
+        self.assertEqual(length_of_largest_timeseries,expected_length_of_largest_timeseries) 
+        self.assertEqual(length_of_smallest_timeseries,expected_length_of_smallest_timeseries)
