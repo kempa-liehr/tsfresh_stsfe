@@ -448,10 +448,10 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         self.assertTrue(pdf_exists and markdown_exists)
 
 
-class EngineerTimeSeriesTestCase(DataTestCase):
+class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
     """"""
 
-    def test_diff_within_series_flat(self):
+    def test_differences_within_series_flat(self):
         (
             flat_timeseries_container,
             ((column_id, column_sort, column_kind, column_value)),
@@ -494,6 +494,108 @@ class EngineerTimeSeriesTestCase(DataTestCase):
         # the original input df
         pd.testing.assert_frame_equal(
             flat_timeseries_container, expected_unmodified_data
+        )
+
+
+    def test_differences_within_series_flat_no_sort(self):
+        (
+            flat_timeseries_container,
+            ((column_id, column_sort, column_kind, column_value)),
+            (y1, y2, y3),
+        ) = self.create_simple_test_data_sample_wide(
+            randomise_sort_order=False, column_sort_is_none = True
+        )
+
+        expected_unmodified_data = flat_timeseries_container.copy(deep=True)
+
+        engineered_ts_within = diff_within_series(
+            timeseries_container=flat_timeseries_container,
+            column_sort=column_sort,
+            column_id=column_id,
+            column_value=column_value,
+            column_kind=column_kind,
+        )
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
+        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+        expected_engineered_ts_within = pd.DataFrame(
+            {
+                column_id: flat_timeseries_container[column_id].tolist(),
+                column_sort: flat_timeseries_container[column_sort].tolist(),
+                "y1": y1,
+                "y2": y2,
+                "y3": y3,
+                "dt_y1": expected_dt_y1,
+                "dt_y2": expected_dt_y2,
+                "dt_y3": expected_dt_y3,
+            }
+        )
+
+        pd.testing.assert_frame_equal(
+            engineered_ts_within, expected_engineered_ts_within, check_like=False
+        )
+
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        pd.testing.assert_frame_equal(
+            flat_timeseries_container, expected_unmodified_data
+        )
+
+    def test_differences_within_stacked_dataframe_no_sort(self):
+        (
+            stacked_dataframe_timeseries_container,
+            (column_id, column_sort, column_kind, column_value),
+        ) = self.create_simple_test_data_sample_stacked(
+            randomise_sort_order=False, column_sort_is_none = True
+        ) 
+
+        expected_unmodified_data = stacked_dataframe_timeseries_container.copy(
+            deep=True
+        )
+
+        engineered_ts_within = diff_within_series(
+            timeseries_container=stacked_dataframe_timeseries_container,
+            column_sort=column_sort,
+            column_id=column_id,
+            column_kind=column_kind,
+            column_value=column_value,
+        )
+
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
+        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+
+        expected_within_values = expected_dt_y1 + expected_dt_y2 + expected_dt_y3
+        expected_within_kinds = 6 * ["dt_y1"] + 6 * ["dt_y2"] + 6 * ["dt_y3"]
+
+        expected_engineered_ts_within = pd.concat(
+            [
+                stacked_dataframe_timeseries_container,
+                pd.DataFrame(
+                    {
+                        column_id: stacked_dataframe_timeseries_container[
+                            column_id
+                        ].tolist(),
+                        column_sort: stacked_dataframe_timeseries_container[
+                            column_sort
+                        ].tolist(),
+                        column_kind: expected_within_kinds,
+                        column_value: expected_within_values,
+                    }
+                ),
+            ]
+        ).reset_index(drop=True)
+
+        pd.testing.assert_frame_equal(
+            engineered_ts_within, expected_engineered_ts_within, check_like=False
+        )
+
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        pd.testing.assert_frame_equal(
+            stacked_dataframe_timeseries_container, expected_unmodified_data
         )
 
     def test_differences_within_stacked_dataframe(self):
@@ -602,7 +704,66 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             == testable_dictionary_of_dataframes(expected_unmodified_data)
         )
 
-    def test_diff_between_series_flat(self):
+    def test_differences_within_dictionary_no_sort(self):
+        (
+            dict_timeseries_container,
+            (column_id, column_sort, column_kind, column_value),
+            (y1, y2, y3),
+            (id_values, sort_values),
+        ) = self.create_simple_test_data_sample_dict(
+            randomise_sort_order=False, column_sort_is_none = True
+        ) 
+
+        expected_unmodified_data = copy.deepcopy(dict_timeseries_container)
+
+        engineered_ts_within = diff_within_series(
+            timeseries_container=dict_timeseries_container,
+            column_sort=column_sort,
+            column_id=column_id,
+            column_value=column_value,
+            column_kind=column_kind,
+        )
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
+        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+        expected_ys = {
+            "y1": y1,
+            "y2": y2,
+            "y3": y3,
+            "dt_y1": expected_dt_y1,
+            "dt_y2": expected_dt_y2,
+            "dt_y3": expected_dt_y3,
+        }
+        expected_engineered_ts_within = {
+            y_name: pd.DataFrame(
+                {column_id: id_values, column_sort: sort_values, column_value: y_values}
+            )
+            for (y_name, y_values) in expected_ys.items()
+        }
+
+        print("Ex")
+        print(expected_engineered_ts_within)
+        print("Res")
+        print(engineered_ts_within)
+
+        self.assertTrue(
+            testable_dictionary_of_dataframes(engineered_ts_within)
+            == testable_dictionary_of_dataframes(expected_engineered_ts_within)
+        )
+
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        self.assertTrue(
+            testable_dictionary_of_dataframes(dict_timeseries_container)
+            == testable_dictionary_of_dataframes(expected_unmodified_data)
+        )
+
+
+class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
+    """"""
+
+    def test_differences_between_series_flat(self):
         (
             flat_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
@@ -649,7 +810,53 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             flat_timeseries_container, expected_unmodified_data
         )
 
-    def test_diff_between_series_wide_dataframe(self):
+    def test_differences_between_series_flat_no_sort(self):
+        (
+            flat_timeseries_container,
+            (column_id, column_sort, column_kind, column_value),
+            (y1, y2, y3),
+        ) = self.create_simple_test_data_sample_wide(
+            randomise_sort_order=False, column_sort_is_none = True
+        )
+
+        expected_unmodified_data = flat_timeseries_container.copy(deep=True)
+
+        engineered_ts_between = diff_between_series(
+            timeseries_container=flat_timeseries_container,
+            column_sort=column_sort,
+            column_id=column_id,
+            column_value=column_value,
+            column_kind=column_kind,
+        )
+
+        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
+        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
+        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+
+        expected_engineered_ts_between = pd.DataFrame(
+            {
+                column_id: flat_timeseries_container[column_id].tolist(),
+                "y1": y1,
+                "y2": y2,
+                "y3": y3,
+                "D_y1y2": expected_D_y1y2,
+                "D_y1y3": expected_D_y1y3,
+                "D_y2y3": expected_D_y2y3,
+            }
+        )
+
+        pd.testing.assert_frame_equal(
+            engineered_ts_between, expected_engineered_ts_between, check_like=False
+        )
+
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        pd.testing.assert_frame_equal(
+            flat_timeseries_container, expected_unmodified_data
+        )
+
+    def test_differences_between_series_wide_dataframe(self):
         (
             stacked_dataframe_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
@@ -685,6 +892,58 @@ class EngineerTimeSeriesTestCase(DataTestCase):
                         ].tolist(),
                         column_sort: stacked_dataframe_timeseries_container[
                             column_sort
+                        ].tolist(),
+                        column_kind: expected_between_kinds,
+                        column_value: expected_between_values,
+                    }
+                ),
+            ]
+        ).reset_index(drop=True)
+
+        pd.testing.assert_frame_equal(
+            engineered_ts_between, expected_engineered_ts_between, check_like=False
+        )
+
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        pd.testing.assert_frame_equal(
+            stacked_dataframe_timeseries_container, expected_unmodified_data
+        )
+
+    def test_differences_between_series_wide_dataframe_no_sort(self):
+        (
+            stacked_dataframe_timeseries_container,
+            (column_id, column_sort, column_kind, column_value),
+        ) = self.create_simple_test_data_sample_stacked(
+            randomise_sort_order=False, column_sort_is_none = True
+        )
+
+        expected_unmodified_data = stacked_dataframe_timeseries_container.copy(
+            deep=True
+        )
+
+        engineered_ts_between = diff_between_series(
+            timeseries_container=stacked_dataframe_timeseries_container,
+            column_sort=column_sort,
+            column_id=column_id,
+            column_kind=column_kind,
+            column_value=column_value,
+        )
+
+        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
+        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
+        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+        expected_between_values = expected_D_y1y2 + expected_D_y1y3 + expected_D_y2y3
+        expected_between_kinds = 6 * ["D_y1y2"] + 6 * ["D_y1y3"] + 6 * ["D_y2y3"]
+
+        expected_engineered_ts_between = pd.concat(
+            [
+                stacked_dataframe_timeseries_container,
+                pd.DataFrame(
+                    {
+                        column_id: stacked_dataframe_timeseries_container[
+                            column_id
                         ].tolist(),
                         column_kind: expected_between_kinds,
                         column_value: expected_between_values,
@@ -756,18 +1015,59 @@ class EngineerTimeSeriesTestCase(DataTestCase):
             == testable_dictionary_of_dataframes(expected_unmodified_data)
         )
 
-    def test_diff_within_series_no_sort_order_provided(self):
-        """
-        For louis
-        """
-        pass
+    def test_differences_between_dictionary_no_sort(self):
+        (
+            dict_timeseries_container,
+            (column_id, column_sort, column_kind, column_value),
+            (y1, y2, y3),
+            (id_values, _),
+        ) = self.create_simple_test_data_sample_dict(
+            randomise_sort_order=False, column_sort_is_none = True
+        )
 
-    def test_diff_between_series_no_sort_order_provided(self):
-        """
-        For louis
-        """
-        pass
+        expected_unmodified_data = copy.deepcopy(dict_timeseries_container)
 
+        engineered_ts_between = diff_between_series(
+            timeseries_container=dict_timeseries_container,
+            column_sort=column_sort,
+            column_id=column_id,
+            column_value=column_value,
+            column_kind=column_kind,
+        )
+
+        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
+        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
+        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+        expected_ys = {
+            "y1": y1,
+            "y2": y2,
+            "y3": y3,
+            "D_y1y2": expected_D_y1y2,
+            "D_y1y3": expected_D_y1y3,
+            "D_y2y3": expected_D_y2y3,
+        }
+
+        expected_engineered_ts_between = {
+            y_name: pd.DataFrame(
+                {column_id: id_values, column_value: y_values}
+            )
+            for (y_name, y_values) in expected_ys.items()
+        }
+
+        # Check expected output
+        self.assertTrue(
+            testable_dictionary_of_dataframes(engineered_ts_between)
+            == testable_dictionary_of_dataframes(expected_engineered_ts_between)
+        )
+
+        # Also check that the original input was not inadvertently mutated
+        # i.e. check that the modifications return whole new objects instead of mutating
+        # the original input df
+        self.assertTrue(
+            testable_dictionary_of_dataframes(dict_timeseries_container)
+            == testable_dictionary_of_dataframes(expected_unmodified_data)
+        )
+    
 
 class testable_dictionary_of_dataframes(dict):
     """

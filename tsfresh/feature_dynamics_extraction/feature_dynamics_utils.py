@@ -209,14 +209,16 @@ def diff_within_series(timeseries_container, column_id:str = None, column_sort:s
 
     if column_sort is None:
         indexing_columns = [column_id]
+        columns_to_drop = []
     else: 
         indexing_columns = [column_id, column_sort]
+        columns_to_drop = [column_sort]
 
     # Case 1: Flat
     if isinstance(data, WideTsFrameAdapter):
         timeseries_container_cp = timeseries_container.copy()
         new_kinds = [f'dt_{kind}' for kind in timeseries_container.drop(indexing_columns, axis=1)]  
-        timeseries_container_cp[new_kinds] = timeseries_container.drop(column_sort,axis=1).groupby(column_id).diff().fillna(0)
+        timeseries_container_cp[new_kinds] = timeseries_container.drop(columns_to_drop,axis=1).groupby(column_id).diff().fillna(0)
 
     # Case 2: Stacked
     elif isinstance(data, LongTsFrameAdapter):

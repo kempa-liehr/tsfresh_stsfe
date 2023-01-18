@@ -635,14 +635,12 @@ class DataTestCase(TestCase):
         return df, y
 
 
-    def create_simple_test_data_sample_wide(self, randomise_sort_order = False):
+    def create_simple_test_data_sample_wide(self, randomise_sort_order = False, column_sort_is_none = False):
         """
         Small test data set in wide format
         :return: timeseries df in wide format 
         :return: column params corresponding to the format
         :return: values of the column kinds
-
-        TODO: Add a flag to make column sort none
         """
         column_sort = "sort"
         column_id = "id"
@@ -656,27 +654,39 @@ class DataTestCase(TestCase):
         y2 = [-10, 0, 1, 3, 14, 12]
         y3 = [6, 5, 4, 3, 2, 1]
 
-        if randomise_sort_order is True:
+        # Case where we don't want a column sort
+        if column_sort_is_none is True:
+            column_sort = None
             flat_timeseries_container = pd.DataFrame(
-                {column_id: id, column_sort: sort, "y1": y1, "y2": y2, "y3": y3}
-            ).sample(frac=1).reset_index(drop=True)
+                    {column_id: id, "y1": y1, "y2": y2, "y3": y3}
+                )
+
+        # Case where we want a column sort column
         else:
-            flat_timeseries_container = pd.DataFrame(
-                {column_id: id, column_sort: sort, "y1": y1, "y2": y2, "y3": y3}
-            )
+            
+            # Case where we want rows to be shuffled
+            if randomise_sort_order is True:
+                flat_timeseries_container = pd.DataFrame(
+                    {column_id: id, column_sort: sort, "y1": y1, "y2": y2, "y3": y3}
+                ).sample(frac=1).reset_index(drop=True)
+            
+            # Case where we want rows in a particular order
+            else:
+                flat_timeseries_container = pd.DataFrame(
+                    {column_id: id, column_sort: sort, "y1": y1, "y2": y2, "y3": y3}
+                )
+        
         column_params = (column_id,column_sort,column_kind,column_value)
         kinds = (y1,y2,y3)
   
         return flat_timeseries_container, column_params, kinds
 
 
-    def create_simple_test_data_sample_stacked(self, randomise_sort_order = False):
+    def create_simple_test_data_sample_stacked(self, randomise_sort_order = False, column_sort_is_none = False):
         """
         Small test data set in long format
         :return: timeseries df in long format (stacked)
         :return: column params corresponding to the format
-
-        TODO: Add a flag to make column sort none
         """
         column_sort = "sort"
         column_id = "id"
@@ -688,29 +698,41 @@ class DataTestCase(TestCase):
         sort = 3 * [1, 2, 3, 1, 2, 3]
         val = [1, 3, 27, 18, 12, -34] + [-10, 0, 1, 3, 14, 12] + [6, 5, 4, 3, 2, 1]
         kind = 6 * ["y1"] + 6 * ["y2"] + 6 * ["y3"]
-        if randomise_sort_order is True:
+
+        # Case where we don't want a column sort
+        if column_sort_is_none is True:
+            column_sort = None
             stacked_dataframe_timeseries_container = pd.DataFrame(
-                {column_id: id, column_sort: sort, column_kind: kind, column_value: val}
-            ).sample(frac = 1).reset_index(drop=True)
-        else:
-            stacked_dataframe_timeseries_container = pd.DataFrame(
-                {column_id: id, column_sort: sort, column_kind: kind, column_value: val}
+                {column_id: id, column_kind: kind, column_value: val}
             )
+
+        # Case where we want a column sort column
+        else:
+
+            # Case where we want rows to be shuffled
+            if randomise_sort_order is True:
+                stacked_dataframe_timeseries_container = pd.DataFrame(
+                    {column_id: id, column_sort: sort, column_kind: kind, column_value: val}
+                ).sample(frac = 1).reset_index(drop=True)
+
+            # Case where we want rows in a particular order
+            else:
+                stacked_dataframe_timeseries_container = pd.DataFrame(
+                    {column_id: id, column_sort: sort, column_kind: kind, column_value: val}
+                )
 
         column_params = (column_id, column_sort, column_kind, column_value)
 
         return stacked_dataframe_timeseries_container, column_params
         
 
-    def create_simple_test_data_sample_dict(self, randomise_sort_order = False):
+    def create_simple_test_data_sample_dict(self, randomise_sort_order = False, column_sort_is_none = False):
         """
         Small test data set of dictionaries of dfs in wide format
         :return: timeseries df in dict[pd.dataframe] format (wide)
         :return: column params corresponding to the format
         :return: values of the column kinds
         :return: id and sort values which is assumed to be the same for each flat df
-
-        TODO: Add a flag to make column sort none
         """
         column_sort = "sort"
         column_id = "id"
@@ -724,20 +746,39 @@ class DataTestCase(TestCase):
         y2 = [-10, 0, 1, 3, 14, 12]
         y3 = [6, 5, 4, 3, 2, 1]
         ys = {"y1": y1, "y2": y2, "y3": y3}
-        if randomise_sort_order is True:
+
+        # Case where we don't want a column sort
+        if column_sort_is_none is True:
+            column_sort = None
+            sort = None
             dictionary_timeseries_container = {
-                y_name: pd.DataFrame(
-                    {column_id: id, column_sort: sort, column_value: y_values}
-                ).sample(frac = 1).reset_index(drop=True)
-                for (y_name, y_values) in ys.items()
-            }
+                    y_name: pd.DataFrame(
+                        {column_id: id, column_value: y_values}
+                    )
+                    for (y_name, y_values) in ys.items()
+                }
+        
+        # Case where we want a column sort column
         else:
-            dictionary_timeseries_container = {
-                y_name: pd.DataFrame(
-                    {column_id: id, column_sort: sort, column_value: y_values}
-                )
-                for (y_name, y_values) in ys.items()
-            }
+
+            # Case where we want rows to be shuffled
+            if randomise_sort_order is True:
+                dictionary_timeseries_container = {
+                    y_name: pd.DataFrame(
+                        {column_id: id, column_sort: sort, column_value: y_values}
+                    ).sample(frac = 1).reset_index(drop=True)
+                    for (y_name, y_values) in ys.items()
+                }
+
+            # Case where we want rows in a particular order
+            else:
+                dictionary_timeseries_container = {
+                    y_name: pd.DataFrame(
+                        {column_id: id, column_sort: sort, column_value: y_values}
+                    )
+                    for (y_name, y_values) in ys.items()
+                }
+
         column_params = (column_id, column_sort, column_kind, column_value)
         kinds = (y1,y2,y3)
         homogenous_values = (id, sort)
