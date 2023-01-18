@@ -177,7 +177,7 @@ def _get_value_columns(df, *other_columns):
         )
 
     return value_columns
-
+    
 
 class WideTsFrameAdapter(PartitionedTsData):
     def __init__(self, df, column_id, column_sort=None, value_columns=None):

@@ -210,14 +210,18 @@ def diff_within_series(timeseries_container, column_id:str = None, column_sort:s
     
     if not isinstance(data, (WideTsFrameAdapter, LongTsFrameAdapter, TsDictAdapter)):
         raise ValueError("Please use a valid supported data format (Dask and PySpark are not supported).")
-    
+
+    if column_sort is None:
+        indexing_columns = [column_id]
+    else: 
+        indexing_columns = [column_id, column_sort]
+
     # Case 1: Flat
     if isinstance(data, WideTsFrameAdapter):
         timeseries_container_cp = timeseries_container.copy()
-        new_kinds = [f'dt_{kind}' for kind in timeseries_container.drop([column_id, column_sort], axis=1)]  
+        new_kinds = [f'dt_{kind}' for kind in timeseries_container.drop(indexing_columns, axis=1)]  
         timeseries_container_cp[new_kinds] = timeseries_container.drop(column_sort,axis=1).groupby(column_id).diff().fillna(0)
 
-    
     # Case 2: Stacked
     elif isinstance(data, LongTsFrameAdapter):
         def stacked_df_within_differencer(timeseries_container): 
@@ -263,6 +267,7 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
         """
         # NOTE: Assumes equidistant timestamps
         # NOTE: Assumes timeseries are sorted
+
         timeseries_container_cp = timeseries_container.copy()
 
         data = to_tsdata(timeseries_container_cp, column_id, column_kind, column_value, column_sort)
@@ -273,35 +278,45 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
         if len(data) <= 1:
             raise ValueError("len(data) needs to be greater than 1. Can only difference `timeseries_container` if there is more than one series")
         
+        if column_sort is None:
+            indexing_columns = [column_id]
+        else: 
+            indexing_columns = [column_id, column_sort]
+
         # Case 1: Flat
-        if isinstance(data, WideTsFrameAdapter):
+        if isinstance(data, WideTsFrameAdapter): 
+
             timeseries_container_cp = timeseries_container.copy()
-            for first_kind, second_kind in combinations(timeseries_container.drop([column_id, column_sort], axis=1), r=2):
-                new_kind = f'D_{first_kind}{second_kind}'
-                timeseries_container_cp[new_kind] = timeseries_container_cp.set_index([column_id, column_sort])[first_kind].subtract(timeseries_container_cp.set_index([column_id,column_sort])[second_kind]).reset_index([column_id, column_sort]).drop([column_id, column_sort], axis=1)
+            
+            for first_kind, second_kind in combinations(timeseries_container.drop(indexing_columns, axis=1), r=2):
+                new_kind = f'D_{first_kind}{second_kind}'                
+                timeseries_container_cp[new_kind] = timeseries_container_cp.set_index(indexing_columns)[first_kind].subtract(timeseries_container_cp.set_index(indexing_columns)[second_kind]).reset_index(indexing_columns, drop=True)
 
         # Case 2: Stacked
+        # TODO: This should also sort the existing pandas dataframes!!! If a column sort is provided
         elif isinstance(data, LongTsFrameAdapter):
+            
             def stacked_df_between_differencer(timeseries_container): 
                 yield timeseries_container
                 for first_timeseries, second_timeseries in combinations(timeseries_container.groupby(column_kind), r=2):
-                    first_kind,first_dataframe = first_timeseries
-                    second_kind,second_dataframe = second_timeseries
+                    first_kind, first_dataframe = first_timeseries
+                    second_kind, second_dataframe = second_timeseries
                     new_timeseries = first_dataframe
                     # Index on column_id, column_sort, and subtract column_value
-                    new_timeseries = first_dataframe.drop(column_kind, axis=1).set_index([column_id, column_sort]).subtract(second_dataframe.drop(column_kind, axis=1).set_index([column_id, column_sort])).reset_index() # Add if column sort is None
+                    new_timeseries = first_dataframe.drop(column_kind, axis=1).set_index(indexing_columns).subtract(second_dataframe.drop(column_kind, axis=1).set_index(indexing_columns)).reset_index()
                     new_timeseries[column_kind] = f'D_{first_kind}{second_kind}'
                     yield new_timeseries
 
             timeseries_container_cp = pd.concat(stacked_df_between_differencer(timeseries_container)).reset_index(drop=True)
 
         # Case 3: Dict of flat
+        # TODO: This should also sort the existing pandas dataframes!!! If a column sort is provided
         elif isinstance(data, TsDictAdapter):
+
             for first_timeseries, second_timeseries in combinations(timeseries_container.items(), r=2):
                 first_kind, first_dataframe = first_timeseries
                 second_kind, second_dataframe = second_timeseries
-                # Index on column_id, column_sort, and subtract column_value 
-                new_timeseries = first_dataframe.set_index([column_id, column_sort]).subtract(second_dataframe.set_index([column_id, column_sort])).reset_index() # Add if column sort is None
+                new_timeseries = first_dataframe.set_index(indexing_columns).subtract(second_dataframe.set_index(indexing_columns)).reset_index()
                 timeseries_container_cp[f'D_{first_kind}{second_kind}'] = new_timeseries            
 
         return timeseries_container_cp
