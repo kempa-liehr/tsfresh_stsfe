@@ -634,11 +634,10 @@ class DataTestCase(TestCase):
         y = pd.Series([2] * 30 + [5] * 20 + [8] * 25)
         return df, y
 
-
-    def create_simple_test_data_sample_wide(self, column_sort_is_none = False):
+    def create_simple_test_data_sample_wide(self, column_sort_is_none=False):
         """
         Small test data set in wide format
-        :return: timeseries df in wide format 
+        :return: timeseries df in wide format
         :return: column params corresponding to the format
         :return: values of the column kinds
         """
@@ -648,32 +647,34 @@ class DataTestCase(TestCase):
         column_kind = None
 
         # Set up input timeseries
-        id = [1, 1, 1, 2, 2, 2]
-        sort = [1, 3, 2, 3, 1, 2]
+        id_vals = [1, 1, 1, 2, 2, 2]
+        sort_vals = [1, 3, 2, 3, 1, 2]
         y1 = [1, 27, 3, -34, 14, 12]
         y2 = [-10, 1, 0, 12, 3, 14]
         y3 = [6, 4, 5, 1, 3, 2]
-        
+
         flat_timeseries_container = pd.DataFrame(
-            {column_id: id, column_sort: sort, "y1": y1, "y2": y2, "y3": y3}
+            {column_id: id_vals, column_sort: sort_vals, "y1": y1, "y2": y2, "y3": y3}
         )
 
         if column_sort_is_none is True:
             flat_timeseries_container = (
-                flat_timeseries_container
-                .sort_values([column_id, column_sort])
-                .drop([column_sort],axis=1)
+                flat_timeseries_container.sort_values([column_id, column_sort])
+                .drop([column_sort], axis=1)
                 .reset_index(drop=True)
             )
             column_sort = None
-        
-        column_params = (column_id,column_sort,column_kind,column_value)
-        kinds = (flat_timeseries_container["y1"],flat_timeseries_container["y2"],flat_timeseries_container["y3"])
-  
+
+        column_params = (column_id, column_sort, column_kind, column_value)
+        kinds = (
+            flat_timeseries_container["y1"],
+            flat_timeseries_container["y2"],
+            flat_timeseries_container["y3"],
+        )
+
         return flat_timeseries_container, column_params, kinds
 
-
-    def create_simple_test_data_sample_stacked(self, column_sort_is_none = False):
+    def create_simple_test_data_sample_stacked(self, column_sort_is_none=False):
         """
         Small test data set in long format
         :return: timeseries df in long format (stacked)
@@ -685,19 +686,25 @@ class DataTestCase(TestCase):
         column_value = "val"
 
         # Set up input time series
-        id = 3 * [1, 1, 1, 2, 2, 2]
-        sort = [1, 3, 2, 3, 1, 2] + [1, 2, 3, 3, 2, 1] + [2, 3, 1, 1, 3, 2]
+        id_vals = 3 * [1, 1, 1, 2, 2, 2]
+        sort_vals = [1, 3, 2, 3, 1, 2] + [1, 2, 3, 3, 2, 1] + [2, 3, 1, 1, 3, 2]
         val = [1, 27, 3, -34, 14, 12] + [-10, 1, 0, 12, 3, 14] + [6, 4, 5, 1, 3, 2]
         kind = 6 * ["y1"] + 6 * ["y2"] + 6 * ["y3"]
-        
+
         stacked_dataframe_timeseries_container = pd.DataFrame(
-            {column_id: id, column_sort: sort, column_kind: kind, column_value: val}
+            {
+                column_id: id_vals,
+                column_sort: sort_vals,
+                column_kind: kind,
+                column_value: val,
+            }
         )
 
         if column_sort_is_none is True:
             stacked_dataframe_timeseries_container = (
-                stacked_dataframe_timeseries_container
-                .sort_values([column_kind, column_id, column_sort])
+                stacked_dataframe_timeseries_container.sort_values(
+                    [column_kind, column_id, column_sort]
+                )
                 .drop(column_sort, axis=1)
                 .reset_index(drop=True)
             )
@@ -706,9 +713,8 @@ class DataTestCase(TestCase):
         column_params = (column_id, column_sort, column_kind, column_value)
 
         return stacked_dataframe_timeseries_container, column_params
-        
 
-    def create_simple_test_data_sample_dict(self, column_sort_is_none = False):
+    def create_simple_test_data_sample_dict(self, column_sort_is_none=False):
         """
         Small test data set of dictionaries of dfs in wide format
         :return: timeseries df in dict[pd.dataframe] format (wide)
@@ -723,15 +729,15 @@ class DataTestCase(TestCase):
 
         # Set up input time series
         id = [1, 1, 1, 2, 2, 2]
-        sort = [1, 3, 2, 3, 1, 2]
-        y1 = [1, 27, 3, -34, 14, 12]   
+        sort_vals = [1, 3, 2, 3, 1, 2]
+        y1 = [1, 27, 3, -34, 14, 12]
         y2 = [-10, 1, 0, 12, 3, 14]
         y3 = [6, 4, 5, 1, 3, 2]
         ys = {"y1": y1, "y2": y2, "y3": y3}
-        
+
         dictionary_timeseries_container = {
             y_name: pd.DataFrame(
-                {column_id: id, column_sort: sort, column_value: y_values}
+                {column_id: id, column_sort: sort_vals, column_value: y_values}
             )
             for (y_name, y_values) in ys.items()
         }
@@ -739,654 +745,530 @@ class DataTestCase(TestCase):
         if column_sort_is_none is True:
             for kind, pandas_dataframe in dictionary_timeseries_container.items():
                 dictionary_timeseries_container[kind] = (
-                    pandas_dataframe
-                    .sort_values([column_id, column_sort])
+                    pandas_dataframe.sort_values([column_id, column_sort])
                     .drop(column_sort, axis=1)
                     .reset_index(drop=True)
                 )
             column_sort = None
+            sort_vals = dictionary_timeseries_container["y1"].index.tolist()
 
         column_params = (column_id, column_sort, column_kind, column_value)
-        kinds = (dictionary_timeseries_container["y1"][column_value], dictionary_timeseries_container["y2"][column_value], dictionary_timeseries_container["y3"][column_value])
-        homogenous_values = (id, sort)
+        
+        kinds = (
+            dictionary_timeseries_container["y1"][column_value],
+            dictionary_timeseries_container["y2"][column_value],
+            dictionary_timeseries_container["y3"][column_value],
+        )
+        
+        # id_vals and sort vals
+        homogenous_values = (
+            dictionary_timeseries_container["y1"][column_id],
+            sort_vals,
+        )
 
         return dictionary_timeseries_container, column_params, kinds, homogenous_values
 
     def create_test_data_expected_tuples(self):
         test_data_expected_tuples = [
-        (
-            10,
-            "a",
-            pd.Series(
-                [
-                    36,
-                    71,
-                    27,
-                    62,
-                    56,
-                    58,
-                    67,
-                    11,
-                    2,
-                    24,
-                    45,
-                    30,
-                    0,
-                    9,
-                    41,
-                    28,
-                    33,
-                    19,
-                    29,
-                    43,
-                ],
-                index=[10] * 20,
+            (
+                10,
+                "a",
+                pd.Series(
+                    [
+                        36,
+                        71,
+                        27,
+                        62,
+                        56,
+                        58,
+                        67,
+                        11,
+                        2,
+                        24,
+                        45,
+                        30,
+                        0,
+                        9,
+                        41,
+                        28,
+                        33,
+                        19,
+                        29,
+                        43,
+                    ],
+                    index=[10] * 20,
+                ),
             ),
-        ),
-        (
-            10,
-            "b",
-            pd.Series(
-                [
-                    78,
-                    37,
-                    23,
-                    44,
-                    6,
-                    3,
-                    21,
-                    61,
-                    39,
-                    31,
-                    53,
-                    16,
-                    66,
-                    50,
-                    40,
-                    47,
-                    7,
-                    42,
-                    38,
-                    55,
-                ],
-                index=[10] * 20,
+            (
+                10,
+                "b",
+                pd.Series(
+                    [
+                        78,
+                        37,
+                        23,
+                        44,
+                        6,
+                        3,
+                        21,
+                        61,
+                        39,
+                        31,
+                        53,
+                        16,
+                        66,
+                        50,
+                        40,
+                        47,
+                        7,
+                        42,
+                        38,
+                        55,
+                    ],
+                    index=[10] * 20,
+                ),
             ),
-        ),
-        (
-            500,
-            "a",
-            pd.Series(
-                [
-                    76,
-                    72,
-                    74,
-                    75,
-                    32,
-                    64,
-                    46,
-                    35,
-                    15,
-                    70,
-                    57,
-                    65,
-                    51,
-                    26,
-                    5,
-                    25,
-                    10,
-                    69,
-                    73,
-                    77,
-                ],
-                index=[500] * 20,
+            (
+                500,
+                "a",
+                pd.Series(
+                    [
+                        76,
+                        72,
+                        74,
+                        75,
+                        32,
+                        64,
+                        46,
+                        35,
+                        15,
+                        70,
+                        57,
+                        65,
+                        51,
+                        26,
+                        5,
+                        25,
+                        10,
+                        69,
+                        73,
+                        77,
+                    ],
+                    index=[500] * 20,
+                ),
             ),
-        ),
-        (
-            500,
-            "b",
-            pd.Series(
-                [
-                    8,
-                    60,
-                    12,
-                    68,
-                    22,
-                    17,
-                    18,
-                    63,
-                    49,
-                    34,
-                    20,
-                    52,
-                    48,
-                    14,
-                    79,
-                    4,
-                    1,
-                    59,
-                    54,
-                    13,
-                ],
-                index=[500] * 20,
+            (
+                500,
+                "b",
+                pd.Series(
+                    [
+                        8,
+                        60,
+                        12,
+                        68,
+                        22,
+                        17,
+                        18,
+                        63,
+                        49,
+                        34,
+                        20,
+                        52,
+                        48,
+                        14,
+                        79,
+                        4,
+                        1,
+                        59,
+                        54,
+                        13,
+                    ],
+                    index=[500] * 20,
+                ),
             ),
-        ),
-    ]
+        ]
         return test_data_expected_tuples
-    
 
     def create_test_data_expected_tuples_wide(self):
         wide_test_data_expected_tuples = [
             (
-            10,
-            "a",
-            pd.Series(
-                [
-                    11,
-                    9,
-                    67,
-                    45,
-                    30,
-                    58,
-                    62,
-                    19,
-                    56,
-                    29,
-                    0,
-                    27,
-                    36,
-                    43,
-                    33,
-                    2,
-                    24,
-                    71,
-                    41,
-                    28,
-                ],
-                index=list(range(20)),
+                10,
+                "a",
+                pd.Series(
+                    [
+                        11,
+                        9,
+                        67,
+                        45,
+                        30,
+                        58,
+                        62,
+                        19,
+                        56,
+                        29,
+                        0,
+                        27,
+                        36,
+                        43,
+                        33,
+                        2,
+                        24,
+                        71,
+                        41,
+                        28,
+                    ],
+                    index=list(range(20)),
+                ),
             ),
-        ),
-        (
-            10,
-            "b",
-            pd.Series(
-                [
-                    50,
-                    40,
-                    39,
-                    7,
-                    53,
-                    23,
-                    16,
-                    37,
-                    66,
-                    38,
-                    6,
-                    47,
-                    3,
-                    61,
-                    44,
-                    42,
-                    78,
-                    31,
-                    21,
-                    55,
-                ],
-                index=list(range(20)),
+            (
+                10,
+                "b",
+                pd.Series(
+                    [
+                        50,
+                        40,
+                        39,
+                        7,
+                        53,
+                        23,
+                        16,
+                        37,
+                        66,
+                        38,
+                        6,
+                        47,
+                        3,
+                        61,
+                        44,
+                        42,
+                        78,
+                        31,
+                        21,
+                        55,
+                    ],
+                    index=list(range(20)),
+                ),
             ),
-        ),
-        (
-            500,
-            "a",
-            pd.Series(
-                [
-                    15,
-                    35,
-                    25,
-                    32,
-                    69,
-                    65,
-                    70,
-                    64,
-                    51,
-                    46,
-                    5,
-                    77,
-                    26,
-                    73,
-                    76,
-                    75,
-                    72,
-                    74,
-                    10,
-                    57,
-                ],
-                index=list(range(20, 40)),
+            (
+                500,
+                "a",
+                pd.Series(
+                    [
+                        15,
+                        35,
+                        25,
+                        32,
+                        69,
+                        65,
+                        70,
+                        64,
+                        51,
+                        46,
+                        5,
+                        77,
+                        26,
+                        73,
+                        76,
+                        75,
+                        72,
+                        74,
+                        10,
+                        57,
+                    ],
+                    index=list(range(20, 40)),
+                ),
             ),
-        ),
-        (
-            500,
-            "b",
-            pd.Series(
-                [
-                    4,
-                    14,
-                    68,
-                    22,
-                    18,
-                    52,
-                    54,
-                    60,
-                    79,
-                    12,
-                    49,
-                    63,
-                    8,
-                    59,
-                    1,
-                    13,
-                    20,
-                    17,
-                    48,
-                    34,
-                ],
-                index=list(range(20, 40)),
+            (
+                500,
+                "b",
+                pd.Series(
+                    [
+                        4,
+                        14,
+                        68,
+                        22,
+                        18,
+                        52,
+                        54,
+                        60,
+                        79,
+                        12,
+                        49,
+                        63,
+                        8,
+                        59,
+                        1,
+                        13,
+                        20,
+                        17,
+                        48,
+                        34,
+                    ],
+                    index=list(range(20, 40)),
+                ),
             ),
-        ),
-    ]   
+        ]
         return wide_test_data_expected_tuples
 
     def create_split_up_test_data_expected_tuples(self):
         window_length = 6
         # Window size of 6 should give the following chunks
         test_data_expected_chunked_up_tuples = [
-        # 4 chunks with id: 10, kind: 'a'
-        ((10,0),
-        'a',
-        pd.Series(
-            [
-               36,
-               71,
-               27,
-               62,
-               56,
-               58
-            ],
-            index=[10] * 6
-        )),
-        ((10,1),
-        'a',
-        pd.Series(
-            [
-               67,
-               11,
-               2,
-               24,
-               45,
-               30 
-            ],
-            index=[10] * 6
-        )),
-        ((10,2),
-        'a',
-        pd.Series(
-            [
-               0,
-               9,
-               41,
-               28,
-               33,
-               19
-            ],
-            index=[10] * 6
-        )),
-        ((10,3),
-        'a',
-        pd.Series(
-            [
-               29,
-               43 
-            ],
-            index=[10] * 2
-        )),
-        # 4 chunks with id: 10, kind: 'b'
-        ((10,0),
-        'b',
-        pd.Series(
-            [
-               78,
-               37,
-               23,
-               44,
-               6,
-               3
-            ],
-            index=[10] * 6
-        )),
-        ((10,1),
-        'b',
-        pd.Series(
-            [
-               21,61,39,31,53,16
-            ],
-            index=[10] * 6
-        )),
-        ((10,2),
-        'b',
-        pd.Series(
-            [
-              66,50,40,47,7,42
-            ],
-            index=[10] * 6
-        )),
-        ((10,3),
-        'b',
-        pd.Series(
-            [
-               38,55
-            ],
-            index=[10] * 2
-        )),
-        # 4 chunks with id: 500, kind: 'a'
-        ((500,0),
-        'a',
-        pd.Series(
-            [
-               76,
-               72,
-               74,
-               75,
-               32,
-               64
-            ],
-            index=[500] * 6
-        )),
-        ((500,1),
-        'a',
-        pd.Series(
-            [
-               46,
-               35,
-               15,
-               70,
-               57,
-               65
-            ],
-            index=[500] * 6
-        )),
-        ((500,2),
-        'a',
-        pd.Series(
-            [
-               51,
-               26,
-               5,
-               25,
-               10,
-               69
-            ],
-            index=[500] * 6
-        )),
-        ((500,3),
-        'a',
-        pd.Series(
-            [
-               73,
-               77 
-            ],
-            index=[500] * 2
-        )),
-        # 4 chunks with id: 500, kind: 'b'
-        ((500,0),
-        'b',
-        pd.Series(
-            [
-               8,
-               60,
-               12,
-               68,
-               22,
-               17     
-            ],
-            index=[500] * 6
-        )),
-        ((500,1),
-        'b',
-        pd.Series(
-            [
-               18,
-               63,
-               49,
-               34,
-               20,
-               52 
-            ],
-            index=[500] * 6
-        )),
-        ((500,2),
-        'b',
-        pd.Series(
-            [
-               48,
-               14,
-               79,
-               4,
-               1,
-               59 
-            ],
-            index=[500] * 6
-        )),
-        ((500,3),
-        'b',
-        pd.Series(
-            [
-               54,
-               13 
-            ],
-            index=[500] * 2
-        )),
+            # 4 chunks with id: 10, kind: 'a'
+            ((10, 0), "a", pd.Series([36, 71, 27, 62, 56, 58], index=[10] * 6)),
+            ((10, 1), "a", pd.Series([67, 11, 2, 24, 45, 30], index=[10] * 6)),
+            ((10, 2), "a", pd.Series([0, 9, 41, 28, 33, 19], index=[10] * 6)),
+            ((10, 3), "a", pd.Series([29, 43], index=[10] * 2)),
+            # 4 chunks with id: 10, kind: 'b'
+            ((10, 0), "b", pd.Series([78, 37, 23, 44, 6, 3], index=[10] * 6)),
+            ((10, 1), "b", pd.Series([21, 61, 39, 31, 53, 16], index=[10] * 6)),
+            ((10, 2), "b", pd.Series([66, 50, 40, 47, 7, 42], index=[10] * 6)),
+            ((10, 3), "b", pd.Series([38, 55], index=[10] * 2)),
+            # 4 chunks with id: 500, kind: 'a'
+            ((500, 0), "a", pd.Series([76, 72, 74, 75, 32, 64], index=[500] * 6)),
+            ((500, 1), "a", pd.Series([46, 35, 15, 70, 57, 65], index=[500] * 6)),
+            ((500, 2), "a", pd.Series([51, 26, 5, 25, 10, 69], index=[500] * 6)),
+            ((500, 3), "a", pd.Series([73, 77], index=[500] * 2)),
+            # 4 chunks with id: 500, kind: 'b'
+            ((500, 0), "b", pd.Series([8, 60, 12, 68, 22, 17], index=[500] * 6)),
+            ((500, 1), "b", pd.Series([18, 63, 49, 34, 20, 52], index=[500] * 6)),
+            ((500, 2), "b", pd.Series([48, 14, 79, 4, 1, 59], index=[500] * 6)),
+            ((500, 3), "b", pd.Series([54, 13], index=[500] * 2)),
         ]
-        
+
         return (test_data_expected_chunked_up_tuples, window_length)
 
     def create_split_up_test_data_expected_tuples_wide(self):
         window_length = 6
         # Window size of 6 should give the following chunks
         wide_test_data_expected_chunked_up_tuples = [
-        # 4 chunks with id: 10, kind: 'a'
-        ((10,0),
-        'a',
-        pd.Series(
-            [
-               11,
-               9,
-               67,
-               45,
-               30,
-               58,
-            ],
-            index=list(range(6))
-        )),
-        ((10,1),
-        'a',
-        pd.Series(
-            [
-               62,
-               19,
-               56,
-               29,
-               0,
-               27,
-            ],
-            index=list(range(6,12))
-        )),
-        ((10,2),
-        'a',
-        pd.Series(
-            [
-               36,
-               43,
-               33,
-               2,
-               24,
-               71,
-            ],
-            index=list(range(12,18))
-        )),
-        ((10,3),
-        'a',
-        pd.Series(
-            [
-               41,
-               28,
-            ],
-            index=list(range(18,20))
-        )),
-        # 4 chunks with id: 10, kind: 'b'
-        ((10,0),
-        'b',
-        pd.Series(
-            [
-               50,
-               40,
-               39,
-               7,
-               53,
-               23,
-            ],
-            index=list(range(6))
-        )),
-        ((10,1),
-        'b',
-        pd.Series(
-            [
-               16,
-               37,
-               66,
-               38,
-               6,
-               47,
-            ],
-            index=list(range(6,12))
-        )),
-        ((10,2),
-        'b',
-        pd.Series(
-            [
-              3,
-              61,
-              44,
-              42,
-              78,
-              31,
-            ],
-            index=list(range(12,18))
-        )),
-        ((10,3),
-        'b',
-        pd.Series(
-            [
-               21,
-               55,
-            ],
-            index=list(range(18,20))
-        )),
-        # 4 chunks with id: 500, kind: 'a'
-        ((500,0),
-        'a',
-        pd.Series(
-            [
-               15,
-               35,
-               25,
-               32,
-               69,
-               65,
-            ],
-            index=list(range(20,26))
-        )),
-        ((500,1),
-        'a',
-        pd.Series(
-            [
-               70,
-               64,
-               51,
-               46,
-               5,
-               77,
-            ],
-            index=list(range(26,32))
-        )),
-        ((500,2),
-        'a',
-        pd.Series(
-            [
-               26,
-               73,
-               76,
-               75,
-               72,
-               74,
-            ],
-            index=list(range(32,38))
-        )),
-        ((500,3),
-        'a',
-        pd.Series(
-            [
-               10,
-               57,
-            ],
-            index=list(range(38,40))
-        )),
-        # 4 chunks with id: 500, kind: 'b'
-        ((500,0),
-        'b',
-        pd.Series(
-            [
-               4,
-               14,
-               68,
-               22,
-               18,
-               52,  
-            ],
-            index=list(range(20,26))
-        )),
-        ((500,1),
-        'b',
-        pd.Series(
-            [
-               54,
-               60,
-               79,
-               12,
-               49,
-               63,
-            ],
-            index=list(range(26,32))
-        )),
-        ((500,2),
-        'b',
-        pd.Series(
-            [
-               8,
-               59,
-               1,
-               13,
-               20,
-               17,
-            ],
-            index=list(range(32,38))
-        )),
-        ((500,3),
-        'b',
-        pd.Series(
-            [
-               48,
-               34,
-            ],
-            index=list(range(38,40))
-        )),
+            # 4 chunks with id: 10, kind: 'a'
+            (
+                (10, 0),
+                "a",
+                pd.Series(
+                    [
+                        11,
+                        9,
+                        67,
+                        45,
+                        30,
+                        58,
+                    ],
+                    index=list(range(6)),
+                ),
+            ),
+            (
+                (10, 1),
+                "a",
+                pd.Series(
+                    [
+                        62,
+                        19,
+                        56,
+                        29,
+                        0,
+                        27,
+                    ],
+                    index=list(range(6, 12)),
+                ),
+            ),
+            (
+                (10, 2),
+                "a",
+                pd.Series(
+                    [
+                        36,
+                        43,
+                        33,
+                        2,
+                        24,
+                        71,
+                    ],
+                    index=list(range(12, 18)),
+                ),
+            ),
+            (
+                (10, 3),
+                "a",
+                pd.Series(
+                    [
+                        41,
+                        28,
+                    ],
+                    index=list(range(18, 20)),
+                ),
+            ),
+            # 4 chunks with id: 10, kind: 'b'
+            (
+                (10, 0),
+                "b",
+                pd.Series(
+                    [
+                        50,
+                        40,
+                        39,
+                        7,
+                        53,
+                        23,
+                    ],
+                    index=list(range(6)),
+                ),
+            ),
+            (
+                (10, 1),
+                "b",
+                pd.Series(
+                    [
+                        16,
+                        37,
+                        66,
+                        38,
+                        6,
+                        47,
+                    ],
+                    index=list(range(6, 12)),
+                ),
+            ),
+            (
+                (10, 2),
+                "b",
+                pd.Series(
+                    [
+                        3,
+                        61,
+                        44,
+                        42,
+                        78,
+                        31,
+                    ],
+                    index=list(range(12, 18)),
+                ),
+            ),
+            (
+                (10, 3),
+                "b",
+                pd.Series(
+                    [
+                        21,
+                        55,
+                    ],
+                    index=list(range(18, 20)),
+                ),
+            ),
+            # 4 chunks with id: 500, kind: 'a'
+            (
+                (500, 0),
+                "a",
+                pd.Series(
+                    [
+                        15,
+                        35,
+                        25,
+                        32,
+                        69,
+                        65,
+                    ],
+                    index=list(range(20, 26)),
+                ),
+            ),
+            (
+                (500, 1),
+                "a",
+                pd.Series(
+                    [
+                        70,
+                        64,
+                        51,
+                        46,
+                        5,
+                        77,
+                    ],
+                    index=list(range(26, 32)),
+                ),
+            ),
+            (
+                (500, 2),
+                "a",
+                pd.Series(
+                    [
+                        26,
+                        73,
+                        76,
+                        75,
+                        72,
+                        74,
+                    ],
+                    index=list(range(32, 38)),
+                ),
+            ),
+            (
+                (500, 3),
+                "a",
+                pd.Series(
+                    [
+                        10,
+                        57,
+                    ],
+                    index=list(range(38, 40)),
+                ),
+            ),
+            # 4 chunks with id: 500, kind: 'b'
+            (
+                (500, 0),
+                "b",
+                pd.Series(
+                    [
+                        4,
+                        14,
+                        68,
+                        22,
+                        18,
+                        52,
+                    ],
+                    index=list(range(20, 26)),
+                ),
+            ),
+            (
+                (500, 1),
+                "b",
+                pd.Series(
+                    [
+                        54,
+                        60,
+                        79,
+                        12,
+                        49,
+                        63,
+                    ],
+                    index=list(range(26, 32)),
+                ),
+            ),
+            (
+                (500, 2),
+                "b",
+                pd.Series(
+                    [
+                        8,
+                        59,
+                        1,
+                        13,
+                        20,
+                        17,
+                    ],
+                    index=list(range(32, 38)),
+                ),
+            ),
+            (
+                (500, 3),
+                "b",
+                pd.Series(
+                    [
+                        48,
+                        34,
+                    ],
+                    index=list(range(38, 40)),
+                ),
+            ),
         ]
         return (wide_test_data_expected_chunked_up_tuples, window_length)
