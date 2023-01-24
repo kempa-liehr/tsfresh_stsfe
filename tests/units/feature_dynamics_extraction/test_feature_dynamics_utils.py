@@ -178,10 +178,6 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
             dictionary_to_repeatedly_mutate == expected_dictionary_to_repeatedly_mutate
         )
 
-        # TODO: Test giving it an illegal feature name...
-        # TODO: Test giving it weird window length
-        # TODO: Test giving it a duplicate feature
-
     def test_parse_feature_timeseries_parts(self):
 
         full_feature_names_inputs = self.generate_full_feature_names_test_inputs()
@@ -214,7 +210,8 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
     
 
     def test_parse_feature_timeseries_parts_bad_input(self):
-
+        # TODO: Test giving it an illegal feature name...
+        # TODO: Test giving it weird window length 
         pass
 
     def test_parse_feature_dynamics_parts(self):
@@ -278,6 +275,8 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         self.assertTrue(full_feature_names_outputs == expected_fd_parts_outputs)
 
     def test_parse_feature_dynamics_parts_bad_input(self):
+        # TODO: Test giving it an illegal feature name...
+        # TODO: Test giving it weird window length
         pass
 
     def test_derive_features_dictionaries(self):
@@ -330,6 +329,8 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
 
         self.assertTrue(fts_dict == expected_fts_dict)
         self.assertTrue(fd_dict == expected_fd_dict)
+        # TODO: Test giving it a duplicate feature
+
 
     def test_interpret_feature_dynamic(self):
 

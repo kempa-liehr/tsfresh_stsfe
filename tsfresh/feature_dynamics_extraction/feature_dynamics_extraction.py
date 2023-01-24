@@ -18,7 +18,6 @@ from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
     clean_feature_timeseries_name,
 )
 
-
 def extract_feature_dynamics(
     timeseries_container,
     feature_timeseries_fc_parameters=None,
@@ -32,60 +31,33 @@ def extract_feature_dynamics(
     **kwargs,
 ):
     """ """
-    # Validation checks
-    # Assert one or the other is not none
-    # Assert that things match up with kind to fc params for both fts and fd
-    # Make sure that dictionaries are supplied to this function!
 
-    if feature_timeseries_kind_to_fc_parameters is not None:
-        fts_dictionary_to_iterate = feature_timeseries_kind_to_fc_parameters
-    else:
-        fts_dictionary_to_iterate = feature_timeseries_fc_parameters
+    relevant_fts_dicts = [fts_dict_calc for fts_dict_calc in [feature_timeseries_fc_parameters, feature_timeseries_kind_to_fc_parameters] if fts_dict_calc is not None]
+    relevant_fd_dicts = [fd_dict_calc for fd_dict_calc in [feature_dynamics_fc_parameters, feature_dynamics_kind_to_fc_parameters] if fd_dict_calc is not None]
+
+    if len(relevant_fts_dicts) != 1 or len(relevant_fd_dicts) != 1:
+        error_mssg = "Must supply exactly one feature timeseries feature calculator dictionary and exactly one feature timeseries feature calculator dictionary"
+        more_info = "Check that one of `feature_timeseries_fc_parameters` or `feature_timeseries_kind_to_fc_parameters` is supplied, \
+            and that one of `feature_dynamics_fc_parameters` or `feature_dynamics_kind_to_fc_parameters` is supplied."
+        raise ValueError("\n".join([error_mssg, more_info]))
+
+    (relevant_fts_dict,) = relevant_fts_dicts
+    (relevant_fd_dict,) = relevant_fd_dicts
+
+    if set(relevant_fd_dict) != set(relevant_fts_dict):
+        raise ValueError("Window lengths of the feature timeseries feature calculators mismatched with the window lengths of the feature dynamics feature calculators")
 
     Xs = []
-    for window_length in fts_dictionary_to_iterate.keys():
 
-        # Assign dictionaries
-        if feature_timeseries_fc_parameters is not None:
-            feature_timeseries_fc_parameters_input = feature_timeseries_fc_parameters[
-                window_length
-            ]
-        else:
-            feature_timeseries_fc_parameters_input = None
-
-        if feature_timeseries_kind_to_fc_parameters is not None:
-            feature_timeseries_kind_to_fc_parameters_input = (
-                feature_timeseries_kind_to_fc_parameters[window_length]
-            )
-        else:
-            feature_timeseries_kind_to_fc_parameters_input = None
-
-        if feature_dynamics_fc_parameters is not None:
-            feature_dynamics_fc_parameters_input = feature_dynamics_fc_parameters[
-                window_length
-            ]
-        else:
-            feature_dynamics_fc_parameters_input = None
-
-        if feature_dynamics_kind_to_fc_parameters is not None:
-            feature_dynamics_kind_to_fc_parameters_input = (
-                feature_dynamics_kind_to_fc_parameters[window_length]
-            )
-        else:
-            feature_dynamics_kind_to_fc_parameters_input = None
-
-        if window_length == 0:
-            raise ValueError(
-                "extract_feature_dynamics() does not support window lengths of zero. Consider using extract_features() instead."
-            )
+    for window_length in relevant_fts_dict.copy().keys():
 
         X = do_feature_dynamics_extraction(
             timeseries_container,
             window_length=window_length,
-            feature_timeseries_fc_parameters=feature_timeseries_fc_parameters_input,
-            feature_timeseries_kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters_input,
-            feature_dynamics_fc_parameters=feature_dynamics_fc_parameters_input,
-            feature_dynamics_kind_to_fc_parameters=feature_dynamics_kind_to_fc_parameters_input,
+            feature_timeseries_fc_parameters = feature_timeseries_fc_parameters[window_length] if feature_timeseries_fc_parameters else None,
+            feature_timeseries_kind_to_fc_parameters=feature_timeseries_kind_to_fc_parameters[window_length] if feature_timeseries_kind_to_fc_parameters else None,
+            feature_dynamics_fc_parameters=feature_dynamics_fc_parameters[window_length] if feature_dynamics_fc_parameters else None,
+            feature_dynamics_kind_to_fc_parameters=feature_dynamics_kind_to_fc_parameters[window_length] if feature_dynamics_kind_to_fc_parameters else None,
             column_id=column_id,
             column_sort=column_sort,
             column_kind=column_kind,
