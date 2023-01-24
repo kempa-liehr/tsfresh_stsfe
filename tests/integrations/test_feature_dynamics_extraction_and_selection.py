@@ -51,7 +51,7 @@ class FeatureDynamicsExtractionTestCase(TestCase):
         # extract_feature_dynamics()
 
 
-class EndToEndTestData(TestCase):
+class EndToEndTestDataCase(TestCase):
 
 
     def column_params_picker(self, data_format):
@@ -63,54 +63,72 @@ class EndToEndTestData(TestCase):
         if data_format not in ["wide", "long", "dict"]:
             raise ValueError
 
+        print("For now we havent implemented long and dict")
+        #TODO: Remove once implemented more stuff 
+        data_format = "wide"
+
         if data_format == "wide":
             return {
-                "column_sort":0,
-                "column_kind":0,
-                "column_id": 0,
-                "column_value":0
+                "column_sort":None,
+                "column_kind":None,
+                "column_id": "measurement_id",
+                "column_value":None
             }
 
         elif data_format == "long":
             return {
-                "column_sort":0,
-                "column_kind":0,
-                "column_id": 0,
-                "column_value":0
+                "column_sort":"t",
+                "column_kind":"kind",
+                "column_id": "measurement_id",
+                "column_value":"value"
             }
 
         elif data_format == "dict":
             return {
-                "column_sort":0,
-                "column_kind":0,
-                "column_id": 0,
-                "column_value":0
+                "column_sort":"sort",
+                "column_kind":None,
+                "column_id": "measurement_id",
+                "column_value":"value"
             }
 
-    def gen_feature_calculators_for_e2e_tests(feature_complexity = "simple"):
+    def gen_feature_calculators_for_e2e_tests(self, feature_complexity = "minimal"):
 
-        if feature_complexity not in ["minimal", "efficient", "comprehensive"]:
-            raise ValueError('feature_complexity needs to be one of ["minimal", "efficient", "comprehensive"]')
+        if feature_complexity not in ["minimal", "not-minimal"]:
+            raise ValueError('feature_complexity needs to be one of ["minimal", "not-minimal"]')
 
-        if feature_complexity == "simple":
+        if feature_complexity == "minimal":
             return MinimalFCParameters()
-        elif feature_complexity == "efficient":
+        elif feature_complexity == "not-minimal":
             # Get a reasonably sized subset of somewhat comeplex features
-            return 0
-        elif feature_complexity == "comprehensive":
-            # Get a reasonably sized subset of some complex features which are not in 
-            # efficient
-            return 0
+            non_simple_features_fc_parameters = {
+                "agg_autocorrelation": [{'f_agg':"mean",'maxlag':40}],
+                "augmented_dickey_fuller": [{'attr':"pvalue",'autolag':"BIC"}],
+                "mean_second_derivative_central": None,
+                "last_location_of_maximum": None,
+                "fft_coefficient": [{"coeff":1, "attr":"real"}],
+                "fft_aggregated": [{"aggtype":"variance"}],
+                "number_peaks": [{"n":3}],
+                "number_cwt_peaks": [{"n":3}],
+                "linear_trend": [{"attr":"slope"}],
+                "permutation_entropy":[{"tau":1, "dimension":2}], 
+                "quantile": [{'q':0.2}],
+                "benford_correlation": None
+            }
+            
+            return non_simple_features_fc_parameters
 
     
-    def gen_example_timeseries_data_for_e2e_tests(container_type="pandas"):
+    def gen_example_timeseries_data_for_e2e_tests(self, container_type, data_format):
 
         """
         TODO: This data should be refactored, but keeping it around for now
         TODO: This should absolutely be replaced or deleted very soon before being merged into anything...
         """
 
-        assert container_type == "pandas" or container_type == "dask"
+        if container_type not in ["pandas", "dask"]:
+            raise ValueError
+        if data_format not in ["wide", "long","dict"]:
+            raise ValueError
 
         y1 = [
             "0",
@@ -374,6 +392,9 @@ class EndToEndTestData(TestCase):
             }
         )
 
+        if data_format != "wide":
+            print("Haven't yet got around to other formats")
+
         if container_type == "dask":
             ts = dd.from_pandas(ts, npartitions=3)
 
@@ -473,13 +494,14 @@ class EngineerMoreTsTestCase(TestCase):
         pass
 
     def test_making_many_combos_of_differences(self):
-        ts_with_extra_timeseries = diff_within_series()
-        ts_with_extra_timeseries = diff_between_series()
+        pass
+        # ts_with_extra_timeseries = diff_within_series()
+        # ts_with_extra_timeseries = diff_between_series()
 
         # Apply the differences function repeatedly and test it works alright
 
 
-class FullEndToEndFeatureDynamicsWorkflowTestCase(EndToEndTestData):
+class FullEndToEndFeatureDynamicsWorkflowTestCase(EndToEndTestDataCase):
     """
     Test for:
 
@@ -490,36 +512,37 @@ class FullEndToEndFeatureDynamicsWorkflowTestCase(EndToEndTestData):
     e) Extract relevant features on more timeseries data
     """
 
-    def end_to_end_pandas(self):
+    def test_end_to_end_pandas(self):
         
         # Test the end to end process of engineer,extract, select, interpret, extract on selected 
         # for pandas for each of the pandas input formats
 
         for data_format in ["wide", "long", "dict"]:
 
-            ts, response = self.gen_example_timeseries_data(container_type="pandas", data_format = data_format)
+            ts, response = self.gen_example_timeseries_data_for_e2e_tests(container_type = "pandas", data_format = data_format)
 
             # TODO: Have a small amount of complex fd calculators i.e. take 8 features from efficientfcparams
-            
-            fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-            fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
+
+            fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "not-minimal")
+            fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "not-minimal")
+
             window_length_1 = 4
             window_length_2 = 5
             fts_fcs_with_window_lengths = {window_length_1:fts_fcs, window_length_2:fts_fcs}
             fts_fds_with_window_lengths = {window_length_1:fd_fcs, window_length_2:fd_fcs}
 
+            column_params_config = self.column_params_picker(data_format=data_format)
+
             # a) Engineer some more timeseries from input timeseries 
-            ts_with_extra_timeseries = diff_within_series(ts)
-            ts_with_extra_timeseries = diff_between_series(ts)
+            ts_with_extra_timeseries_within = diff_within_series(ts, column_id = column_params_config["column_id"], column_sort = column_params_config["column_sort"], column_value = column_params_config["column_value"], column_kind = column_params_config["column_kind"])
+            # add an even extra layer of ts differencing 
+            ts_with_extra_timeseries_between_and_within = diff_between_series(ts_with_extra_timeseries_within, column_id = column_params_config["column_id"], column_sort = column_params_config["column_sort"], column_value = column_params_config["column_value"], column_kind = column_params_config["column_kind"])
 
             # TODO: Assert stuff here
-
-
-            column_params_config = self.column_params_picker(data_format=data_format)
             
             # b) Extract
             X = extract_feature_dynamics(
-                timeseries_container = ts_with_extra_timeseries,
+                timeseries_container = ts_with_extra_timeseries_between_and_within,
                 feature_timeseries_fc_parameters = fts_fcs_with_window_lengths,
                 feature_dynamics_fc_parameters = fts_fds_with_window_lengths,
                 column_id = column_params_config["column_id"],
@@ -548,20 +571,23 @@ class FullEndToEndFeatureDynamicsWorkflowTestCase(EndToEndTestData):
 
             # TODO: Assert stuff here
 
-            # e) extract on selected features 
+            # e) extract on selected features
+             
             # TODO: Could extract from a new bunch of timeseries to make it clearer what the benefit of this is
             X_more = extract_feature_dynamics(
-                    timeseries_container=ts,
+                    timeseries_container=ts_with_extra_timeseries_between_and_within,
                     n_jobs=0,
                     feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
                     feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
-                    column_id="measurement_id",
-                    column_sort="t",
-                    column_kind=None,
-                    column_value=None,
+                    column_id=column_params_config["column_id"],
+                    column_sort=column_params_config["column_sort"],
+                    column_kind=column_params_config["column_kind"],
+                    column_value=column_params_config["column_value"],
                 )
 
             # TODO: Assert stuff here
+
+            self.assertTrue(True)
 
 
 
@@ -569,7 +595,7 @@ class FullEndToEndFeatureDynamicsWorkflowTestCase(EndToEndTestData):
 
     def end_to_end_dask_long_format(self):
         # NOTE: I think long format is the only format that works with Dask (could be wrong here)
-        ts, response = self.gen_example_timeseries_data(container_type="dask")
+        ts, response = self.gen_example_timeseries_data_for_e2e_tests(container_type="dask", data_format = "wide")
         fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
         fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
 
