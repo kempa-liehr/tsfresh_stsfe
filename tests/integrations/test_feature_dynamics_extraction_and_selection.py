@@ -54,6 +54,39 @@ class FeatureDynamicsExtractionTestCase(TestCase):
 class EndToEndTestData(TestCase):
 
 
+    def column_params_picker(self, data_format):
+        """
+        Picks out the correct column params depending on 
+        the particular data format type
+        """
+
+        if data_format not in ["wide", "long", "dict"]:
+            raise ValueError
+
+        if data_format == "wide":
+            return {
+                "column_sort":0,
+                "column_kind":0,
+                "column_id": 0,
+                "column_value":0
+            }
+
+        elif data_format == "long":
+            return {
+                "column_sort":0,
+                "column_kind":0,
+                "column_id": 0,
+                "column_value":0
+            }
+
+        elif data_format == "dict":
+            return {
+                "column_sort":0,
+                "column_kind":0,
+                "column_id": 0,
+                "column_value":0
+            }
+
     def gen_feature_calculators_for_e2e_tests(feature_complexity = "simple"):
 
         if feature_complexity not in ["minimal", "efficient", "comprehensive"]:
@@ -457,293 +490,85 @@ class FullEndToEndFeatureDynamicsWorkflowTestCase(EndToEndTestData):
     e) Extract relevant features on more timeseries data
     """
 
-    def end_to_end_pandas_wide_format(self):
-
-        ts, response = self.gen_example_timeseries_data(container_type="pandas")
-        fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-        fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-
-        ts_with_extra_timeseries = diff_within_series()
-        ts_with_extra_timeseries = diff_between_series()
-
-        window_length_1 = 4
-        window_length_2 = 5
-        fts_fcs_with_window_lengths = {window_length_1:fts_fcs, window_length_2:fts_fcs}
-        fts_fds_with_window_lengths = {window_length_1:fd_fcs, window_length_2:fd_fcs}
-
-        # TODO: Have a small amount of complex fd calculators i.e. take 8 features from efficientfcparams
-
-        # a) Engineer timeseries
+    def end_to_end_pandas(self):
         
-        # b) Extract
-        X = extract_feature_dynamics(
-            timeseries_container = ts_with_extra_timeseries,
-            feature_timeseries_fc_parameters = fts_fcs_with_window_lengths,
-            feature_dynamics_fc_parameters = fts_fds_with_window_lengths,
-            column_id = "measurement_id",
-            column_sort = "t",
-            column_kind = None,
-            column_value = None 
-        )
+        # Test the end to end process of engineer,extract, select, interpret, extract on selected 
+        # for pandas for each of the pandas input formats
 
-        # c) Select
-        X_relevant = select_features(X, response, fdr_level = 0.95)
+        for data_format in ["wide", "long", "dict"]:
 
-        # d) Interpret
-        rel_feature_names = list(X_relevant.columns)
+            ts, response = self.gen_example_timeseries_data(container_type="pandas", data_format = data_format)
 
-        rel_feature_time_series_dict, rel_feature_dynamics_dict = derive_features_dictionaries(
-            rel_feature_names
-        )
+            # TODO: Have a small amount of complex fd calculators i.e. take 8 features from efficientfcparams
+            
+            fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
+            fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
+            window_length_1 = 4
+            window_length_2 = 5
+            fts_fcs_with_window_lengths = {window_length_1:fts_fcs, window_length_2:fts_fcs}
+            fts_fds_with_window_lengths = {window_length_1:fd_fcs, window_length_2:fd_fcs}
 
-        gen_pdf_for_feature_dynamics(
-                feature_dynamics_names=rel_feature_names,
+            # a) Engineer some more timeseries from input timeseries 
+            ts_with_extra_timeseries = diff_within_series(ts)
+            ts_with_extra_timeseries = diff_between_series(ts)
+
+            # TODO: Assert stuff here
+
+
+            column_params_config = self.column_params_picker(data_format=data_format)
+            
+            # b) Extract
+            X = extract_feature_dynamics(
+                timeseries_container = ts_with_extra_timeseries,
+                feature_timeseries_fc_parameters = fts_fcs_with_window_lengths,
+                feature_dynamics_fc_parameters = fts_fds_with_window_lengths,
+                column_id = column_params_config["column_id"],
+                column_sort = column_params_config["column_sort"],
+                column_kind = column_params_config["column_kind"],
+                column_value = column_params_config["column_value"] 
             )
 
-        # e) extract on selected features 
-        # TODO: Could extract from a new bunch of timeseries to make it clearer what the benefit of this is
-        X_more = extract_feature_dynamics(
-                timeseries_container=ts,
-                n_jobs=0,
-                feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
-                feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
-                column_id="measurement_id",
-                column_sort="t",
-                column_kind=None,
-                column_value=None,
+            # TODO: Assert stuff here
+
+            # c) Select
+            X_relevant = select_features(X, response, fdr_level = 0.95)
+
+            # TODO: Assert stuff here
+
+            # d) Interpret
+            rel_feature_names = list(X_relevant.columns)
+
+            rel_feature_time_series_dict, rel_feature_dynamics_dict = derive_features_dictionaries(
+                rel_feature_names
             )
 
+            gen_pdf_for_feature_dynamics(
+                    feature_dynamics_names=rel_feature_names,
+                )
 
-        
+            # TODO: Assert stuff here
 
-    def end_to_end_pandas_long_format(self):
+            # e) extract on selected features 
+            # TODO: Could extract from a new bunch of timeseries to make it clearer what the benefit of this is
+            X_more = extract_feature_dynamics(
+                    timeseries_container=ts,
+                    n_jobs=0,
+                    feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
+                    feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
+                    column_id="measurement_id",
+                    column_sort="t",
+                    column_kind=None,
+                    column_value=None,
+                )
 
-        # TODO: Have a small amount of complex fd calculators i.e. take 8 features from efficientfcparams
-        ts, response = self.gen_example_timeseries_data(container_type="pandas")
-        fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-        fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-
-        ts_with_extra_timeseries = diff_within_series()
-        ts_with_extra_timeseries = diff_between_series()
-
-        window_length_1 = 4
-        window_length_2 = 5
-        fts_fcs_with_window_lengths = {window_length_1:fts_fcs, window_length_2:fts_fcs}
-        fts_fds_with_window_lengths = {window_length_1:fd_fcs, window_length_2:fd_fcs}
-
-        # a) Engineer timeseries
-        
-        # b) Extract
-        X = extract_feature_dynamics(
-            timeseries_container = ts_with_extra_timeseries,
-            feature_timeseries_fc_parameters = fts_fcs_with_window_lengths,
-            feature_dynamics_fc_parameters = fts_fds_with_window_lengths,
-            column_id = "measurement_id",
-            column_sort = "t",
-            column_kind = None,
-            column_value = None 
-        )
-
-        # c) Select
-        X_relevant = select_features(X, response, fdr_level = 0.95)
-
-        # d) Interpret
-        rel_feature_names = list(X_relevant.columns)
-
-        rel_feature_time_series_dict, rel_feature_dynamics_dict = derive_features_dictionaries(
-            rel_feature_names
-        )
-
-        gen_pdf_for_feature_dynamics(
-                feature_dynamics_names=rel_feature_names,
-            )
-
-        # e) extract on selected features 
-        # TODO: Could extract from a new bunch of timeseries to make it clearer what the benefit of this is
-        X_more = extract_feature_dynamics(
-                timeseries_container=ts_with_extra_timeseries,
-                n_jobs=0,
-                feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
-                feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
-                column_id="measurement_id",
-                column_sort="t",
-                column_kind=None,
-                column_value=None,
-            )
-
-        
+            # TODO: Assert stuff here
 
 
 
-    def end_to_end_pandas_dict_format(self):
-
-        # TODO: Have a small amount of complex fd calculators i.e. take 8 features from efficientfcparams
-        ts, response = self.gen_example_timeseries_data(container_type="pandas")
-        fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-        fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-
-        ts_with_extra_timeseries = diff_within_series()
-        ts_with_extra_timeseries = diff_between_series()
-
-        window_length_1 = 4
-        window_length_2 = 5
-        fts_fcs_with_window_lengths = {window_length_1:fts_fcs, window_length_2:fts_fcs}
-        fts_fds_with_window_lengths = {window_length_1:fd_fcs, window_length_2:fd_fcs}
-
-        # a) Engineer timeseries
-        
-        # b) Extract
-        X = extract_feature_dynamics(
-            timeseries_container = ts_with_extra_timeseries,
-            feature_timeseries_fc_parameters = fts_fcs_with_window_lengths,
-            feature_dynamics_fc_parameters = fts_fds_with_window_lengths,
-            column_id = "measurement_id",
-            column_sort = "t",
-            column_kind = None,
-            column_value = None 
-        )
-
-        # c) Select
-        X_relevant = select_features(X, response, fdr_level = 0.95)
-
-        # d) Interpret
-        rel_feature_names = list(X_relevant.columns)
-
-        rel_feature_time_series_dict, rel_feature_dynamics_dict = derive_features_dictionaries(
-            rel_feature_names
-        )
-
-        gen_pdf_for_feature_dynamics(
-                feature_dynamics_names=rel_feature_names,
-            )
-
-
-        # e) extract on selected features 
-        # TODO: Could extract from a new bunch of timeseries to make it clearer what the benefit of this is
-        X_more = extract_feature_dynamics(
-                timeseries_container=ts_with_extra_timeseries,
-                n_jobs=0,
-                feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
-                feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
-                column_id="measurement_id",
-                column_sort="t",
-                column_kind=None,
-                column_value=None,
-            )
-
-        
-
-    def end_to_end_pandas_dict_format(self):
-
-        # TODO: Have a small amount of complex fd calculators i.e. take 8 features from efficientfcparams
-        ts, response = self.gen_example_timeseries_data(container_type="pandas")
-        fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-        fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-
-        ts_with_extra_timeseries = diff_within_series()
-        ts_with_extra_timeseries = diff_between_series()
-
-        window_length_1 = 4
-        window_length_2 = 5
-        fts_fcs_with_window_lengths = {window_length_1:fts_fcs, window_length_2:fts_fcs}
-        fts_fds_with_window_lengths = {window_length_1:fd_fcs, window_length_2:fd_fcs}
-
-        # a) Engineer timeseries
-        
-        # b) Extract
-        X = extract_feature_dynamics(
-            timeseries_container = ts_with_extra_timeseries,
-            feature_timeseries_fc_parameters = fts_fcs_with_window_lengths,
-            feature_dynamics_fc_parameters = fts_fds_with_window_lengths,
-            column_id = "measurement_id",
-            column_sort = "t",
-            column_kind = None,
-            column_value = None 
-        )
-
-        # c) Select
-        X_relevant = select_features(X, response, fdr_level = 0.95)
-        
-
-        # d) Interpret
-        rel_feature_names = list(X_relevant.columns)
-
-        rel_feature_time_series_dict, rel_feature_dynamics_dict = derive_features_dictionaries(
-            rel_feature_names
-        )
-
-        gen_pdf_for_feature_dynamics(
-                feature_dynamics_names=rel_feature_names,
-            )
-
-        # e) extract on selected features 
-        # TODO: Could extract from a new bunch of timeseries to make it clearer what the benefit of this is
-        X_more = extract_feature_dynamics(
-                timeseries_container=ts,
-                n_jobs=0,
-                feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
-                feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
-                column_id="measurement_id",
-                column_sort="t",
-                column_kind=None,
-                column_value=None,
-            )
-
-
-    def end_to_end_dask_wide_format(self):
-        ts, response = self.gen_example_timeseries_data(container_type="dask")
-        fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-        fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-
-        window_length_1 = 4
-        window_length_2 = 5
-        fts_fcs_with_window_lengths = {window_length_1:fts_fcs, window_length_2:fts_fcs}
-        fts_fds_with_window_lengths = {window_length_1:fd_fcs, window_length_2:fd_fcs}
-        
-        # a) Extract
-        X = extract_feature_dynamics(
-            timeseries_container = ts,
-            feature_timeseries_fc_parameters = fts_fcs_with_window_lengths,
-            feature_dynamics_fc_parameters = fts_fds_with_window_lengths,
-            column_id = "measurement_id",
-            column_sort = "t",
-            column_kind = None,
-            column_value = None 
-        )
-
-        # b) Select
-        X_pandas = X.compute()
-
-        X_relevant = select_features(X_pandas, response, fdr_level = 0.95)
-
-        # c) Interpret
-        rel_feature_names = list(X_relevant.columns)
-
-        rel_feature_time_series_dict, rel_feature_dynamics_dict = derive_features_dictionaries(
-            rel_feature_names
-        )
-
-        gen_pdf_for_feature_dynamics(
-                feature_dynamics_names=rel_feature_names,
-            )
-
-        # d) extract on selected features 
-        # TODO: Could extract from a new bunch of timeseries to make it clearer what the benefit of this is
-        X_more = extract_feature_dynamics(
-                timeseries_container=ts,
-                n_jobs=0,
-                feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
-                feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
-                column_id="measurement_id",
-                column_sort="t",
-                column_kind=None,
-                column_value=None,
-            )
-
-        
 
 
     def end_to_end_dask_long_format(self):
+        # NOTE: I think long format is the only format that works with Dask (could be wrong here)
         ts, response = self.gen_example_timeseries_data(container_type="dask")
         fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
         fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
@@ -792,64 +617,4 @@ class FullEndToEndFeatureDynamicsWorkflowTestCase(EndToEndTestData):
                 column_kind=None,
                 column_value=None,
             )
-        
-
-    def end_to_end_dask_dict_format(self):
-        ts, response = self.gen_example_timeseries_data(container_type="dask")
-        fts_fcs = self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-        fd_fcs =  self.gen_feature_calculators_for_e2e_tests(feature_complexity = "efficient")
-
-        window_length_1 = 4
-        window_length_2 = 5
-        fts_fcs_with_window_lengths = {window_length_1:fts_fcs, window_length_2:fts_fcs}
-        fts_fds_with_window_lengths = {window_length_1:fd_fcs, window_length_2:fd_fcs}
-
-        # a) Extract
-        X = extract_feature_dynamics(
-            timeseries_container = ts,
-            feature_timeseries_fc_parameters = fts_fcs_with_window_lengths,
-            feature_dynamics_fc_parameters = fts_fds_with_window_lengths,
-            column_id = "measurement_id",
-            column_sort = "t",
-            column_kind = None,
-            column_value = None 
-        )
-
-        # b) Select
-
-        X_pandas = X.compute()
-
-        X_relevant = select_features(X_pandas, response, fdr_level = 0.95)
-
-        # c) Interpret
-        rel_feature_names = list(X_relevant.columns)
-
-        rel_feature_time_series_dict, rel_feature_dynamics_dict = derive_features_dictionaries(
-            rel_feature_names
-        )
-
-        gen_pdf_for_feature_dynamics(
-                feature_dynamics_names=rel_feature_names,
-            )
-
-        # d) extract on selected features 
-
-        # TODO: Could extract from a new bunch of timeseries to make it clearer what the benefit of this is
-        X_more = extract_feature_dynamics(
-                timeseries_container=ts,
-                n_jobs=0,
-                feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
-                feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
-                column_id="measurement_id",
-                column_sort="t",
-                column_kind=None,
-                column_value=None,
-            )
-
-
-
-
-
-
-
-
+    
