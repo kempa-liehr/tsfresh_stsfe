@@ -21,6 +21,10 @@ from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
 
 
 
+# WARNING/NOTE:: This file is still in progress! Highly likely that some really big changes will be made to this whole file 
+# soon....
+
+
 class FeatureDynamicsExtractionTestCase(TestCase):
 
     def test_pandas(self):
