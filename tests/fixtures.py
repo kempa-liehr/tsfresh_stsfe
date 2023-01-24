@@ -759,7 +759,7 @@ class DataTestCase(TestCase):
             dictionary_timeseries_container["y2"][column_value],
             dictionary_timeseries_container["y3"][column_value],
         )
-        
+
         # id_vals and sort vals
         homogenous_values = (
             dictionary_timeseries_container["y1"][column_id],

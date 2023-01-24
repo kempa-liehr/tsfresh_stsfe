@@ -24,11 +24,8 @@ def clean_feature_timeseries_name(
     including adding the window length information into the feature timeseries name
     """
     ts_kind_token = "||"
-    feature_timeseries_parameter_token = "|"
     return (
-        feature_timeseries_name.replace("__", ts_kind_token, 1).replace(
-            "__", feature_timeseries_parameter_token
-        )
+        feature_timeseries_name.replace("__", ts_kind_token)
         + f"@window_{window_length}"
     )
 
@@ -75,7 +72,7 @@ def parse_feature_timeseries_parts(full_feature_name: str) -> dict:
     Generates the feature timeseries (fts) parts from a full feature dynamic (fd) name
 
     i.e. given a ful feature dynamic name like:
-    <ts_kind>||<fts_name>|<fts_params>@<window_length>__<fd_name>__<fd_params>
+    <ts_kind>||<fts_name>||<fts_params>@<window_length>__<fd_name>__<fd_params>
 
     Then this function will return a dictionary with two keys:
     1) window_length, an integer
@@ -89,14 +86,12 @@ def parse_feature_timeseries_parts(full_feature_name: str) -> dict:
     """
 
     ts_kind_token = "||"
-    param_token = "|"
     window_length_token = "@"
 
     # Split according to our separator into <col_name>, <feature_name>, <feature_params> <window_length>
     fts_parts = (
         full_feature_name.split("__")[0]
         .replace(ts_kind_token, "__")
-        .replace(param_token, "__")
         .replace(window_length_token, "__")
         .split("__")
     )
@@ -127,12 +122,12 @@ def parse_feature_dynamics_parts(full_feature_name):
     Generates the feature dynamics (fd) parts from a full feature dynamic (fd) name
 
     i.e. given a full feature dynamic name like:
-    <ts_kind>||<fts_name>|<fts_params>@<window_length>__<fd_name>__<fd_params>
+    <ts_kind>||<fts_name>||<fts_params>@<window_length>__<fd_name>__<fd_params>
 
     Then this function will return a dictionary with one key:
     1) fd_parts, a list containing:
     [
-        <ts_kind>||<fts_name>|<fts_params>@<window_length>,
+        <ts_kind>||<fts_name>||<fts_params>@<window_length>,
         <fd_name>,
         <fd_params>*
     ]
@@ -156,7 +151,7 @@ def derive_features_dictionaries(feature_names: List[str]) -> Tuple[dict, dict]:
 
         params:
             feature_names (list of str): the relevant feature names in the form of:
-            <ts_kind>||<feature_time_series>|<feature_times_series_params>@<window_length>__<feature_dynamic_name>__<feature_dynamics_params>
+            <ts_kind>||<feature_time_series>||<feature_times_series_params>@<window_length>__<feature_dynamic_name>__<feature_dynamics_params>
 
         returns:
             fts_mapping (dict): The mapping used to compute the feature time-series on the ts kinds.
@@ -252,8 +247,11 @@ def diff_within_series(
 
         def stacked_df_within_differencer(timeseries_container):
             """
-            Returns a single dataframe with the value column being 
-            the difference within a timeseries
+            First yields the full input dataframe, and then
+            every subsequent call yields a new dataframe each time
+            with the value column being the difference within 
+            a single timeseries kind as found in the original 
+            stacked dataframe
             """
 
             yield timeseries_container
@@ -322,10 +320,9 @@ def diff_between_series(
          Returns the original dataframe with the engineered timeseries added as new columns
 
     """
-    timeseries_container_cp = timeseries_container.copy()
 
     data = to_tsdata(
-        timeseries_container_cp, column_id, column_kind, column_value, column_sort
+        timeseries_container, column_id, column_kind, column_value, column_sort
     )
 
     if not isinstance(data, (WideTsFrameAdapter, LongTsFrameAdapter, TsDictAdapter)):
@@ -352,6 +349,7 @@ def diff_between_series(
             timeseries_container.drop(indexing_columns, axis=1), r=2
         ):
             new_kind = f"D_{first_kind}{second_kind}"
+
             timeseries_container_cp[new_kind] = (
                 timeseries_container_cp.set_index(indexing_columns)[first_kind]
                 .subtract(
@@ -364,12 +362,23 @@ def diff_between_series(
     elif isinstance(data, LongTsFrameAdapter):
 
         def stacked_df_between_differencer(timeseries_container):
+            """
+            First yields the full input dataframe, and then
+            every subsequent call yields a new dataframe each time
+            with the value column being the difference between 
+            two timeseries kinds as found in the original 
+            stacked dataframe
+            """
+
             yield timeseries_container
+
             for first_timeseries, second_timeseries in combinations(
                 timeseries_container.groupby(column_kind), r=2
             ):
+
                 first_kind, first_dataframe = first_timeseries
                 second_kind, second_dataframe = second_timeseries
+
                 new_timeseries = (
                     first_dataframe.drop(column_kind, axis=1)
                     .set_index(indexing_columns)
@@ -380,8 +389,11 @@ def diff_between_series(
                     )
                     .reset_index()
                 )
+
                 new_timeseries[column_kind] = f"D_{first_kind}{second_kind}"
+
                 yield new_timeseries
+
 
         timeseries_container_cp = pd.concat(
             stacked_df_between_differencer(timeseries_container)
@@ -390,17 +402,22 @@ def diff_between_series(
     # Case 3: Dict of flat
     elif isinstance(data, TsDictAdapter):
 
+        timeseries_container_cp = timeseries_container.copy()
+
         for first_timeseries, second_timeseries in combinations(
             timeseries_container.items(), r=2
         ):
             first_kind, first_dataframe = first_timeseries
             second_kind, second_dataframe = second_timeseries
+
             new_timeseries = (
                 first_dataframe.set_index(indexing_columns)
                 .subtract(second_dataframe.set_index(indexing_columns))
                 .reset_index()
             )
+
             timeseries_container_cp[f"D_{first_kind}{second_kind}"] = new_timeseries
+
 
     return timeseries_container_cp
 
@@ -410,12 +427,12 @@ def interpret_feature_dynamic(feature_dynamic: str) -> dict:
     Breaks up a full feature dynamic name into its constituent parts.
 
     It turns a complex full feature dynamic (fd) name:
-    <ts_kind>||<fts_name>|<fts_params*>@<window_length>__<fd_name>__<fd_params>
+    <ts_kind>||<fts_name>||<fts_params*>@<window_length>__<fd_name>__<fd_params>
 
     Into a dictionary containing each part, including the full original name
 
     {
-        "Full Feature Dynamic Name" : <ts_kind>||<fts_name>|<fts_params*>@<window_length>__<fd_name>__<fd_params>,
+        "Full Feature Dynamic Name" : <ts_kind>||<fts_name>||<fts_params*>@<window_length>__<fd_name>__<fd_params>,
         "Input Timeseries": <ts_kind>,
         "Feature Timeseries Calculator": {<fts_name> : [*<fts_params>]},
         "Window Length": <window_length>,

@@ -22,6 +22,19 @@ from tsfresh.feature_dynamics_extraction.feature_dynamics_utils import (
 class FeatureDynamicsStringManipulationTestCase(TestCase):
     """"""
 
+    def generate_full_feature_names_test_inputs(self):
+        
+        full_feature_names_inputs = (
+            "x||ratio_beyond_r_sigma||r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
+            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
+            "z||permutation_entropy||dimension_5||tau_1@window_800__symmetry_looking__r_0.35000000000000003",
+            'x||value_count||value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
+            'y||time_reversal_asymmetry_statistic||lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
+            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
+        )
+
+        return full_feature_names_inputs
+
     def test_clean_feature_timeseries_name(self):
         window_length = 15
         fts_name_inputs = (
@@ -33,11 +46,11 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         )
 
         expected_cleaned_fts_names = (
-            f"y||energy_ratio_by_chunks|num_segments_10|segment_focus_0@window_{window_length}",
-            f"y||number_crossing_m|m_0@window_{window_length}",
-            f'y||fft_coefficient|attr_"angle"|coeff_89@window_{window_length}',
-            f'y||change_quantiles|f_agg_"var"|isabs_False|qh_0.2|ql_0.0@window_{window_length}',
-            f"y||permutation_entropy|dimension_5|tau_1@window_{window_length}",
+            f"y||energy_ratio_by_chunks||num_segments_10||segment_focus_0@window_{window_length}",
+            f"y||number_crossing_m||m_0@window_{window_length}",
+            f'y||fft_coefficient||attr_"angle"||coeff_89@window_{window_length}',
+            f'y||change_quantiles||f_agg_"var"||isabs_False||qh_0.2||ql_0.0@window_{window_length}',
+            f"y||permutation_entropy||dimension_5||tau_1@window_{window_length}",
         )
 
         feature_timeseries_cleaned_name_outputs = tuple(
@@ -170,14 +183,9 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         # TODO: Test giving it a duplicate feature
 
     def test_parse_feature_timeseries_parts(self):
-        full_feature_names_inputs = (
-            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
-            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
-            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
-            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
-            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
-            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
-        )
+
+        full_feature_names_inputs = self.generate_full_feature_names_test_inputs()
+
         expected_fts_parts_outputs = (
             {"window_length": 10, "fts_parts": ["x", "ratio_beyond_r_sigma", "r_2"]},
             {
@@ -203,23 +211,20 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
             for full_feature_name in full_feature_names_inputs
         )
         self.assertTrue(expected_fts_parts_outputs == actual_fts_parts_outputs)
+    
 
-        # TODO: Test some stuff that should fail
+    def test_parse_feature_timeseries_parts_bad_input(self):
+
+        pass
 
     def test_parse_feature_dynamics_parts(self):
 
-        full_feature_names_inputs = (
-            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
-            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
-            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
-            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
-            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
-            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
-        )
+        full_feature_names_inputs = self.generate_full_feature_names_test_inputs()
+
         expected_fd_parts_outputs = (
             {
                 "fd_parts": [
-                    "x||ratio_beyond_r_sigma|r_2@window_10",
+                    "x||ratio_beyond_r_sigma||r_2@window_10",
                     "energy_ratio_by_chunks",
                     "num_segments_10",
                     "segment_focus_3",
@@ -234,14 +239,14 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
             },
             {
                 "fd_parts": [
-                    "z||permutation_entropy|dimension_5|tau_1@window_800",
+                    "z||permutation_entropy||dimension_5||tau_1@window_800",
                     "symmetry_looking",
                     "r_0.35000000000000003",
                 ]
             },
             {
                 "fd_parts": [
-                    "x||value_count|value_1@window_10",
+                    "x||value_count||value_1@window_10",
                     "change_quantiles",
                     'f_agg_"var"',
                     "isabs_False",
@@ -251,7 +256,7 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
             },
             {
                 "fd_parts": [
-                    "y||time_reversal_asymmetry_statistic|lag_3@window_20",
+                    "y||time_reversal_asymmetry_statistic||lag_3@window_20",
                     "fft_coefficient",
                     'attr_"imag"',
                     "coeff_1",
@@ -272,17 +277,12 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         )
         self.assertTrue(full_feature_names_outputs == expected_fd_parts_outputs)
 
-        # TODO: Potentially add some more tests to validate
+    def test_parse_feature_dynamics_parts_bad_input(self):
+        pass
 
     def test_derive_features_dictionaries(self):
-        full_feature_names_inputs = (
-            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
-            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
-            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
-            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
-            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
-            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
-        )
+
+        full_feature_names_inputs = self.generate_full_feature_names_test_inputs()
 
         fts_dict, fd_dict = derive_features_dictionaries(full_feature_names_inputs)
 
@@ -297,10 +297,10 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         }
         expected_fd_dict = {
             10: {
-                "x||ratio_beyond_r_sigma|r_2@window_10": {
+                "x||ratio_beyond_r_sigma||r_2@window_10": {
                     "energy_ratio_by_chunks": [{"num_segments": 10, "segment_focus": 3}]
                 },
-                "x||value_count|value_1@window_10": {
+                "x||value_count||value_1@window_10": {
                     "change_quantiles": [
                         {"f_agg": "var", "isabs": False, "qh": 0.8, "ql": 0.4}
                     ]
@@ -312,12 +312,12 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
                 }
             },
             800: {
-                "z||permutation_entropy|dimension_5|tau_1@window_800": {
+                "z||permutation_entropy||dimension_5||tau_1@window_800": {
                     "symmetry_looking": [{"r": 0.35000000000000003}]
                 }
             },
             20: {
-                "y||time_reversal_asymmetry_statistic|lag_3@window_20": {
+                "y||time_reversal_asymmetry_statistic||lag_3@window_20": {
                     "fft_coefficient": [{"attr": "imag", "coeff": 1}]
                 }
             },
@@ -333,16 +333,7 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
 
     def test_interpret_feature_dynamic(self):
 
-        # Test input
-        # TODO: Could factor out the test input as it is used in multiple different testing functions
-        full_feature_names_inputs = (
-            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
-            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
-            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
-            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
-            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
-            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
-        )
+        full_feature_names_inputs = self.generate_full_feature_names_test_inputs()
 
         # Expected values
         expected_multiple_input_timeseries = ("x", "y", "z", "x", "y", "x")
@@ -415,21 +406,11 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         self.assertTrue(actual_string_output == expected_string_output)
 
     def test_gen_pdf_for_feature_dynamics(self):
-        # This unit test is just going to call the
-        # function. If there is no error, then the test passes!
-        # NOTE: Not sure if this is the correct way to unit test
-        # something that writes to a file but this is my best guess.
 
-        full_feature_names_inputs = (  # Could/should factor this out into a fixture as used multiple times
-            "x||ratio_beyond_r_sigma|r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
-            "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
-            "z||permutation_entropy|dimension_5|tau_1@window_800__symmetry_looking__r_0.35000000000000003",
-            'x||value_count|value_1@window_10__change_quantiles__f_agg_"var"__isabs_False__qh_0.8__ql_0.4',
-            'y||time_reversal_asymmetry_statistic|lag_3@window_20__fft_coefficient__attr_"imag"__coeff_1',
-            "x||ratio_value_number_to_time_series_length@window_5__range_count__max_1__min_-1",
-        )
+        full_feature_names_inputs = self.generate_full_feature_names_test_inputs()
 
         output_filename_prefix = "feature_dynamics_interpretation_test"
+
         gen_pdf_for_feature_dynamics(
             full_feature_names_inputs, output_filename=output_filename_prefix
         )
