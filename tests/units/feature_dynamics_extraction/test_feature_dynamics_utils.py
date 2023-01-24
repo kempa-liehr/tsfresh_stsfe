@@ -453,9 +453,7 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             flat_timeseries_container,
             ((column_id, column_sort, column_kind, column_value)),
             (y1, y2, y3),
-        ) = self.create_simple_test_data_sample_wide(
-            randomise_sort_order=False
-        )  # TODO: Get test working with randomise_sort_order = True
+        ) = self.create_simple_test_data_sample_wide()
 
         expected_unmodified_data = flat_timeseries_container.copy(deep=True)
 
@@ -466,9 +464,12 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             column_value=column_value,
             column_kind=column_kind,
         )
-        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
-        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
-        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+        
+        # For (column sort, id) =  [(1,1),(3,1),(2,1),(3,2),(1,2),(2,2)] 
+        expected_dt_y1 = [0.0, 24.0, 2.0, -46.0, 0.0, -2.0]
+        expected_dt_y2 = [0.0, 1.0, 10.0, -2.0, 0.0, 11.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, -1.0, 0.0, -1.0]
+
         expected_engineered_ts_within = pd.DataFrame(
             {
                 column_id: flat_timeseries_container[column_id].tolist(),
@@ -499,9 +500,7 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             flat_timeseries_container,
             ((column_id, column_sort, column_kind, column_value)),
             (y1, y2, y3),
-        ) = self.create_simple_test_data_sample_wide(
-            randomise_sort_order=False, column_sort_is_none = True
-        )
+        ) = self.create_simple_test_data_sample_wide(column_sort_is_none = True)
 
         expected_unmodified_data = flat_timeseries_container.copy(deep=True)
 
@@ -512,7 +511,7 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             column_value=column_value,
             column_kind=column_kind,
         )
-        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0.0, -2.0, -46.0]
         expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
         expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
         expected_engineered_ts_within = pd.DataFrame(
@@ -542,9 +541,7 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
         (
             stacked_dataframe_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
-        ) = self.create_simple_test_data_sample_stacked(
-            randomise_sort_order=False
-        )  # TODO: Get test working with randomise_sort_order = True
+        ) = self.create_simple_test_data_sample_stacked()
 
         expected_unmodified_data = stacked_dataframe_timeseries_container.copy(
             deep=True
@@ -558,9 +555,12 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             column_value=column_value,
         )
 
-        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
-        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
-        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+        # For (column sort, id) =  [(1,1),(3,1),(2,1),(3,2),(1,2),(2,2)] 
+        expected_dt_y1 = [0.0, 24.0, 2.0, -46.0, 0.0, -2.0]
+        # For (column sort, id) =  [(1,1),(2,1),(3,1),(3,2),(2,2),(1,2)]
+        expected_dt_y2 = [0.0, 11.0, -1.0, 9.0, -11.0, 0.0]
+        # For (column sort, id) =  [(2,1),(3,1),(1,1),(1,2),(3,2),(2,2)]
+        expected_dt_y3 = [1.0,-2.0,0.0,0.0,1.0,1.0]
 
         expected_within_values = expected_dt_y1 + expected_dt_y2 + expected_dt_y3
         expected_within_kinds = 6 * ["dt_y1"] + 6 * ["dt_y2"] + 6 * ["dt_y3"]
@@ -598,9 +598,7 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
         (
             stacked_dataframe_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
-        ) = self.create_simple_test_data_sample_stacked(
-            randomise_sort_order=False, column_sort_is_none = True
-        ) 
+        ) = self.create_simple_test_data_sample_stacked(column_sort_is_none = True) 
 
         expected_unmodified_data = stacked_dataframe_timeseries_container.copy(
             deep=True
@@ -614,9 +612,9 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             column_value=column_value,
         )
 
-        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
-        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
-        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -2.0, -46.0]
+        expected_dt_y2 = [0.0, 11.0, -1.0, 0.0, -11.0, 9.0]
+        expected_dt_y3 = [0.0, 1.0, -2.0, 0, 1.0, 1.0]
 
         expected_within_values = expected_dt_y1 + expected_dt_y2 + expected_dt_y3
         expected_within_kinds = 6 * ["dt_y1"] + 6 * ["dt_y2"] + 6 * ["dt_y3"]
@@ -653,9 +651,7 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             (column_id, column_sort, column_kind, column_value),
             (y1, y2, y3),
             (id_values, sort_values),
-        ) = self.create_simple_test_data_sample_dict(
-            randomise_sort_order=False
-        )  # TODO: Get test working with randomise_sort_order = True
+        ) = self.create_simple_test_data_sample_dict()
 
         expected_unmodified_data = copy.deepcopy(dict_timeseries_container)
 
@@ -666,9 +662,11 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             column_value=column_value,
             column_kind=column_kind,
         )
-        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
-        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
-        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+        # For (sort,id) = [(1,1),(3,1),(2,1),(3,2),(1,2),(2,2)]
+        expected_dt_y1 = [0.0, 24.0, 2.0, -46.0, 0.0, -2.0]
+        expected_dt_y2 = [0.0, 1.0, 10.0, -2.0, 0.0, 11.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, -1.0, 0.0, -1.0]
+
         expected_ys = {
             "y1": y1,
             "y2": y2,
@@ -703,9 +701,7 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             (column_id, column_sort, column_kind, column_value),
             (y1, y2, y3),
             (id_values, _),
-        ) = self.create_simple_test_data_sample_dict(
-            randomise_sort_order=False, column_sort_is_none = True
-        ) 
+        ) = self.create_simple_test_data_sample_dict(column_sort_is_none = True) 
 
         expected_unmodified_data = copy.deepcopy(dict_timeseries_container)
 
@@ -716,9 +712,11 @@ class EngineerTimeSeriesTestCaseDifferencesWithin(DataTestCase):
             column_value=column_value,
             column_kind=column_kind,
         )
-        expected_dt_y1 = [0.0, 2.0, 24.0, 0, -6.0, -46.0]
-        expected_dt_y2 = [0.0, 10.0, 1.0, 0, 11.0, -2.0]
-        expected_dt_y3 = [0.0, -1.0, -1.0, 0, -1.0, -1.0]
+
+        expected_dt_y1 = [0.0, 2.0, 24.0, 0.0, -2.0, -46.0]
+        expected_dt_y2 = [0.0, 10.0, 1.0, 0.0, 11.0, -2.0]
+        expected_dt_y3 = [0.0, -1.0, -1.0, 0.0, -1.0, -1.0,]
+
         expected_ys = {
             "y1": y1,
             "y2": y2,
@@ -756,9 +754,7 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             flat_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
             (y1, y2, y3),
-        ) = self.create_simple_test_data_sample_wide(
-            randomise_sort_order=False
-        )  # TODO: Get test working with randomise_sort_order = True
+        ) = self.create_simple_test_data_sample_wide()
 
         expected_unmodified_data = flat_timeseries_container.copy(deep=True)
 
@@ -770,9 +766,9 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             column_kind=column_kind,
         )
 
-        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
-        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
-        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+        expected_D_y1y2 = [11, 26, 3, -46, 11, -2]
+        expected_D_y1y3 = [-5, 23, -2, -35, 11, 10]
+        expected_D_y2y3 = [-16, -3, -5, 11, 0, 12]
 
         expected_engineered_ts_between = pd.DataFrame(
             {
@@ -803,9 +799,7 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             flat_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
             (y1, y2, y3),
-        ) = self.create_simple_test_data_sample_wide(
-            randomise_sort_order=False, column_sort_is_none = True
-        )
+        ) = self.create_simple_test_data_sample_wide(column_sort_is_none = True)
 
         expected_unmodified_data = flat_timeseries_container.copy(deep=True)
 
@@ -817,8 +811,8 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             column_kind=column_kind,
         )
 
-        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
-        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
+        expected_D_y1y2 = [11, 3, 26, 11, -2, -46]
+        expected_D_y1y3 = [-5, -2, 23, 11, 10, -35]
         expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
 
         expected_engineered_ts_between = pd.DataFrame(
@@ -844,13 +838,11 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             flat_timeseries_container, expected_unmodified_data
         )
 
-    def test_differences_between_series_wide_dataframe(self):
+    def test_differences_between_series_long_dataframe(self):
         (
             stacked_dataframe_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
-        ) = self.create_simple_test_data_sample_stacked(
-            randomise_sort_order=False
-        )  # TODO: Get test working with randomise_sort_order = True
+        ) = self.create_simple_test_data_sample_stacked()
 
         expected_unmodified_data = stacked_dataframe_timeseries_container.copy(
             deep=True
@@ -864,9 +856,12 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             column_value=column_value,
         )
 
-        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
-        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
-        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+        # Based on sort: [1,2,3,1,2,3]
+        expected_D_y1y2 = [11, 2, 27, 0, 9, -46]
+        expected_D_y1y3 = [-4, -3, 23, 13, 10,-37]
+        expected_D_y2y3 = [-15, -5, -4, 13, 1, 9]
+        sort = 6*[1,2,3]
+
         expected_between_values = expected_D_y1y2 + expected_D_y1y3 + expected_D_y2y3
         expected_between_kinds = 6 * ["D_y1y2"] + 6 * ["D_y1y3"] + 6 * ["D_y2y3"]
 
@@ -878,9 +873,7 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
                         column_id: stacked_dataframe_timeseries_container[
                             column_id
                         ].tolist(),
-                        column_sort: stacked_dataframe_timeseries_container[
-                            column_sort
-                        ].tolist(),
+                        column_sort: sort,
                         column_kind: expected_between_kinds,
                         column_value: expected_between_values,
                     }
@@ -899,13 +892,11 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             stacked_dataframe_timeseries_container, expected_unmodified_data
         )
 
-    def test_differences_between_series_wide_dataframe_no_sort(self):
+    def test_differences_between_series_long_dataframe_no_sort(self):
         (
             stacked_dataframe_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
-        ) = self.create_simple_test_data_sample_stacked(
-            randomise_sort_order=False, column_sort_is_none = True
-        )
+        ) = self.create_simple_test_data_sample_stacked(column_sort_is_none = True)
 
         expected_unmodified_data = stacked_dataframe_timeseries_container.copy(
             deep=True
@@ -919,9 +910,10 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             column_value=column_value,
         )
 
-        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
-        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
-        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+        expected_D_y1y2 = [11, 2, 27, 0, 9, -46]
+        expected_D_y1y3 = [-4, -3, 23, 13, 10,-37]
+        expected_D_y2y3 = [-15, -5, -4, 13, 1, 9]
+
         expected_between_values = expected_D_y1y2 + expected_D_y1y3 + expected_D_y2y3
         expected_between_kinds = 6 * ["D_y1y2"] + 6 * ["D_y1y3"] + 6 * ["D_y2y3"]
 
@@ -930,9 +922,7 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
                 stacked_dataframe_timeseries_container,
                 pd.DataFrame(
                     {
-                        column_id: stacked_dataframe_timeseries_container[
-                            column_id
-                        ].tolist(),
+                        column_id: 3 * [1,1,1,2,2,2],
                         column_kind: expected_between_kinds,
                         column_value: expected_between_values,
                     }
@@ -957,9 +947,7 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             (column_id, column_sort, column_kind, column_value),
             (y1, y2, y3),
             (id_values, sort_values),
-        ) = self.create_simple_test_data_sample_dict(
-            randomise_sort_order=False
-        )  # TODO: Get test working with randomise_sort_order = True
+        ) = self.create_simple_test_data_sample_dict()
 
         expected_unmodified_data = copy.deepcopy(dict_timeseries_container)
 
@@ -971,9 +959,10 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             column_kind=column_kind,
         )
 
-        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
-        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
-        expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+        expected_D_y1y2 = [11, 26, 3, -46, 11, -2]
+        expected_D_y1y3 = [-5, 23, -2, -35, 11, 10]
+        expected_D_y2y3 = [-16, -3, -5, 11, 0, 12]
+
         expected_ys = {
             "y1": y1,
             "y2": y2,
@@ -1008,10 +997,8 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             dict_timeseries_container,
             (column_id, column_sort, column_kind, column_value),
             (y1, y2, y3),
-            (id_values, _),
-        ) = self.create_simple_test_data_sample_dict(
-            randomise_sort_order=False, column_sort_is_none = True
-        )
+            (_, _),
+        ) = self.create_simple_test_data_sample_dict(column_sort_is_none = True)
 
         expected_unmodified_data = copy.deepcopy(dict_timeseries_container)
 
@@ -1023,9 +1010,11 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
             column_kind=column_kind,
         )
 
-        expected_D_y1y2 = [11, 3, 26, 15, -2, -46]
-        expected_D_y1y3 = [-5, -2, 23, 15, 10, -35]
+        expected_id_values = [1,1,1,2,2,2]
+        expected_D_y1y2 = [11, 3, 26, 11, -2, -46]
+        expected_D_y1y3 = [-5, -2, 23, 11,10,-35]
         expected_D_y2y3 = [-16, -5, -3, 0, 12, 11]
+
         expected_ys = {
             "y1": y1,
             "y2": y2,
@@ -1037,7 +1026,7 @@ class EngineerTimeSeriesTestCaseDifferencesBetween(DataTestCase):
 
         expected_engineered_ts_between = {
             y_name: pd.DataFrame(
-                {column_id: id_values, column_value: y_values}
+                {column_id: expected_id_values, column_value: y_values}
             )
             for (y_name, y_values) in expected_ys.items()
         }
@@ -1073,11 +1062,7 @@ class testable_dictionary_of_dataframes(dict):
         for key in self.keys():
             if key not in other_dictionary_of_dataframes:
                 return False
-            elif (
-                pd.testing.assert_frame_equal(
-                    self[key], other_dictionary_of_dataframes[key], check_like=False
-                )
-                is False
-            ):
-                return False
+            
+            pd.testing.assert_frame_equal(self[key], other_dictionary_of_dataframes[key], check_like=False)
+        
         return True

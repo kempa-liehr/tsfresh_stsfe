@@ -209,16 +209,16 @@ def diff_within_series(timeseries_container, column_id:str = None, column_sort:s
 
     if column_sort is None:
         indexing_columns = [column_id]
-        columns_to_drop = []
+        sort_column = []
     else: 
         indexing_columns = [column_id, column_sort]
-        columns_to_drop = [column_sort]
+        sort_column = [column_sort]
 
     # Case 1: Flat
     if isinstance(data, WideTsFrameAdapter):
         timeseries_container_cp = timeseries_container.copy()
         new_kinds = [f'dt_{kind}' for kind in timeseries_container.drop(indexing_columns, axis=1)]  
-        timeseries_container_cp[new_kinds] = timeseries_container.drop(columns_to_drop,axis=1).groupby(column_id).diff().fillna(0)
+        timeseries_container_cp[new_kinds] = timeseries_container.sort_values(sort_column).drop(sort_column,axis=1).groupby(column_id).diff().fillna(0)
 
     # Case 2: Stacked
     elif isinstance(data, LongTsFrameAdapter):
@@ -226,7 +226,7 @@ def diff_within_series(timeseries_container, column_id:str = None, column_sort:s
             yield timeseries_container
             for kind, dataframe in timeseries_container.groupby(column_kind):
                 new_timeseries = dataframe.copy()
-                new_timeseries[column_value] = new_timeseries.groupby(column_id)[column_value].diff().fillna(0)
+                new_timeseries[column_value] = new_timeseries.sort_values(sort_column).groupby(column_id)[column_value].diff().fillna(0)
                 new_timeseries[column_kind] = f'dt_{kind}'
                 yield new_timeseries
         
@@ -237,7 +237,7 @@ def diff_within_series(timeseries_container, column_id:str = None, column_sort:s
         timeseries_container_cp = timeseries_container.copy()
         for kind, flat_dataframe in timeseries_container.items():
             new_timeseries = flat_dataframe.copy()
-            new_timeseries[column_value] = new_timeseries.groupby(column_id)[column_value].diff().fillna(0)
+            new_timeseries[column_value] = new_timeseries.sort_values(sort_column).groupby(column_id)[column_value].diff().fillna(0)
             timeseries_container_cp[f'dt_{kind}'] = new_timeseries
     
     return timeseries_container_cp
@@ -284,6 +284,8 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
                 new_kind = f'D_{first_kind}{second_kind}'                
                 timeseries_container_cp[new_kind] = timeseries_container_cp.set_index(indexing_columns)[first_kind].subtract(timeseries_container_cp.set_index(indexing_columns)[second_kind]).reset_index(indexing_columns, drop=True)
 
+
+
         # Case 2: Stacked
         elif isinstance(data, LongTsFrameAdapter):
             def stacked_df_between_differencer(timeseries_container): 
@@ -291,9 +293,13 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
                 for first_timeseries, second_timeseries in combinations(timeseries_container.groupby(column_kind), r=2):
                     first_kind, first_dataframe = first_timeseries
                     second_kind, second_dataframe = second_timeseries
-                    new_timeseries = first_dataframe
-                    # Index on column_id, column_sort, and subtract column_value
-                    new_timeseries = first_dataframe.drop(column_kind, axis=1).set_index(indexing_columns).subtract(second_dataframe.drop(column_kind, axis=1).set_index(indexing_columns)).reset_index()
+                    new_timeseries = (
+                        first_dataframe
+                        .drop(column_kind, axis=1)
+                        .set_index(indexing_columns)
+                        .subtract(second_dataframe.drop(column_kind, axis=1).set_index(indexing_columns))
+                        .reset_index()
+                    )
                     new_timeseries[column_kind] = f'D_{first_kind}{second_kind}'
                     yield new_timeseries
 
@@ -305,7 +311,12 @@ def diff_between_series(timeseries_container, column_id, column_sort, column_kin
             for first_timeseries, second_timeseries in combinations(timeseries_container.items(), r=2):
                 first_kind, first_dataframe = first_timeseries
                 second_kind, second_dataframe = second_timeseries
-                new_timeseries = first_dataframe.set_index(indexing_columns).subtract(second_dataframe.set_index(indexing_columns)).reset_index()
+                new_timeseries = (
+                    first_dataframe
+                    .set_index(indexing_columns)
+                    .subtract(second_dataframe.set_index(indexing_columns))
+                    .reset_index()
+                )
                 timeseries_container_cp[f'D_{first_kind}{second_kind}'] = new_timeseries            
 
         return timeseries_container_cp
