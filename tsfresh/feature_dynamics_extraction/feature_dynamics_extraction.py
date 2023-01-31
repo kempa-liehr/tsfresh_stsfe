@@ -31,10 +31,9 @@ def extract_feature_dynamics(
     **kwargs,
 ):
     """ """
-
+    
     relevant_fts_dicts = [fts_dict_calc for fts_dict_calc in [feature_timeseries_fc_parameters, feature_timeseries_kind_to_fc_parameters] if fts_dict_calc is not None]
     relevant_fd_dicts = [fd_dict_calc for fd_dict_calc in [feature_dynamics_fc_parameters, feature_dynamics_kind_to_fc_parameters] if fd_dict_calc is not None]
-
     if len(relevant_fts_dicts) != 1 or len(relevant_fd_dicts) != 1:
         error_mssg = "Must supply exactly one feature timeseries feature calculator dictionary and exactly one feature timeseries feature calculator dictionary"
         more_info = "Check that one of `feature_timeseries_fc_parameters` or `feature_timeseries_kind_to_fc_parameters` is supplied, \
@@ -43,6 +42,9 @@ def extract_feature_dynamics(
 
     (relevant_fts_dict,) = relevant_fts_dicts
     (relevant_fd_dict,) = relevant_fd_dicts
+
+    if relevant_fts_dict == {} or relevant_fts_dict == {}:
+        raise ValueError("Dictionaries are empty")
 
     if set(relevant_fd_dict) != set(relevant_fts_dict):
         raise ValueError("Window lengths of the feature timeseries feature calculators mismatched with the window lengths of the feature dynamics feature calculators")
