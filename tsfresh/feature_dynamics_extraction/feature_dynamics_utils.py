@@ -241,7 +241,6 @@ def diff_within_series(
             .fillna(0)
         )
 
-
     # Case 2: Stacked dataframe
     elif isinstance(data, LongTsFrameAdapter):
 
@@ -249,8 +248,8 @@ def diff_within_series(
             """
             First yields the full input dataframe, and then
             every subsequent call yields a new dataframe each time
-            with the value column being the difference within 
-            a single timeseries kind as found in the original 
+            with the value column being the difference within
+            a single timeseries kind as found in the original
             stacked dataframe
             """
 
@@ -271,13 +270,9 @@ def diff_within_series(
 
                 yield new_timeseries
 
-
-        timeseries_container_cp = (
-            pd.concat(
-                stacked_df_within_differencer(timeseries_container)
-                )
-                .reset_index(drop=True)
-        )
+        timeseries_container_cp = pd.concat(
+            stacked_df_within_differencer(timeseries_container)
+        ).reset_index(drop=True)
 
     # Case 3: Dict of flat dataframes
     elif isinstance(data, TsDictAdapter):
@@ -296,7 +291,6 @@ def diff_within_series(
             )
 
             timeseries_container_cp[f"dt_{kind}"] = new_timeseries
-
 
     return timeseries_container_cp
 
@@ -365,8 +359,8 @@ def diff_between_series(
             """
             First yields the full input dataframe, and then
             every subsequent call yields a new dataframe each time
-            with the value column being the difference between 
-            two timeseries kinds as found in the original 
+            with the value column being the difference between
+            two timeseries kinds as found in the original
             stacked dataframe
             """
 
@@ -394,7 +388,6 @@ def diff_between_series(
 
                 yield new_timeseries
 
-
         timeseries_container_cp = pd.concat(
             stacked_df_between_differencer(timeseries_container)
         ).reset_index(drop=True)
@@ -417,7 +410,6 @@ def diff_between_series(
             )
 
             timeseries_container_cp[f"D_{first_kind}{second_kind}"] = new_timeseries
-
 
     return timeseries_container_cp
 

@@ -14,7 +14,9 @@ import dask.dataframe as dd
 from tests.units.feature_extraction.test_data import DataAdapterTestCase
 
 
-class IterableSplitTsDataTestCase(DataAdapterTestCase): # TODO: Optimise this! Inheritance here makes the unit tests slower...
+class IterableSplitTsDataTestCase(
+    DataAdapterTestCase
+):  # TODO: Optimise this! Inheritance here makes the unit tests slower...
     """"""
 
     def test_iter_on_long_data(self):
@@ -193,7 +195,7 @@ class ApplyableSplitTsDataTestCase(DataAdapterTestCase):
         # able to assert expected dask data == resultant dask data
 
         self.assertEqual(result.column_id, "id")
-      
+
         def test_f(chunk):
             return pd.DataFrame(
                 {"id": chunk[0], "variable": chunk[1], "value": chunk[2]}

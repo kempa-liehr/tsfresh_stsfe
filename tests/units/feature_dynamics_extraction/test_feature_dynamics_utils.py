@@ -23,7 +23,7 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
     """"""
 
     def generate_full_feature_names_test_inputs(self):
-        
+
         full_feature_names_inputs = (
             "x||ratio_beyond_r_sigma||r_2@window_10__energy_ratio_by_chunks__num_segments_10__segment_focus_3",
             "y||variance_larger_than_standard_deviation@window_200__lempel_ziv_complexity__bins_5",
@@ -207,11 +207,10 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
             for full_feature_name in full_feature_names_inputs
         )
         self.assertTrue(expected_fts_parts_outputs == actual_fts_parts_outputs)
-    
 
     def test_parse_feature_timeseries_parts_bad_input(self):
         # TODO: Test giving it an illegal feature name...
-        # TODO: Test giving it weird window length 
+        # TODO: Test giving it weird window length
         pass
 
     def test_parse_feature_dynamics_parts(self):
@@ -330,7 +329,6 @@ class FeatureDynamicsStringManipulationTestCase(TestCase):
         self.assertTrue(fts_dict == expected_fts_dict)
         self.assertTrue(fd_dict == expected_fd_dict)
         # TODO: Test giving it a duplicate feature
-
 
     def test_interpret_feature_dynamic(self):
 
@@ -1050,7 +1048,10 @@ class testable_dictionary_of_dataframes(dict):
                 return False
 
             pd.testing.assert_frame_equal(
-                self[key], other_dictionary_of_dataframes[key], check_like=False, check_dtype=False
+                self[key],
+                other_dictionary_of_dataframes[key],
+                check_like=False,
+                check_dtype=False,
             )
 
         return True

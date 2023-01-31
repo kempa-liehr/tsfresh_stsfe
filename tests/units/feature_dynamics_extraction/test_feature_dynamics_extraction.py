@@ -237,7 +237,7 @@ class DynamicsExtractionTestCase(DataTestCase):
             "mean": None,
             "median": None,
         }
-        
+
         window_length = 2
         self.assertRaises(
             ValueError,
