@@ -26,7 +26,7 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         df.to_csv("THIS_IS_THE_INPUT_TIMESERIES_FOR_CHECKING_EXTRACTION.csv", index=False)
         
-        window_length = 15
+        window_length = 4
         extracted_feature_dynamics = extract_feature_dynamics(
             df,
             column_id="id",
@@ -34,9 +34,7 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
             column_kind="kind",
             column_value="val",
             n_jobs=self.n_jobs,
-            feature_timeseries_fc_parameters={
-                window_length: ComprehensiveFCParameters()
-            },
+            feature_timeseries_fc_parameters={window_length: ComprehensiveFCParameters()},
             feature_dynamics_fc_parameters={window_length: ComprehensiveFCParameters()},
         )
 
@@ -103,8 +101,6 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
             )
         )
 
-        # Now for more complicated feature dynamics...
-        # TODO: Do some more complex features by hand
         self.assertTrue(
             np.all(
                 extracted_feature_dynamics[
@@ -113,6 +109,95 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
                 == np.array([3, 1])
             )
         )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||cwt_coefficients__coeff_1__w_2@window_{window_length}__xxx"
+                ]
+                == np.array([0.6,0.6])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||friedrich_coefficients__m_1__r_2__coeff_1@window_{window_length}__xxx"
+                ]
+                == np.array([0.2,0.2])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||standard_deviation@window_{window_length}__xxx"
+                ]
+                == np.array([0.6,0.6])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||linear_trend@window_{window_length}__xxx"
+                ]
+                == np.array([3,1])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                ]
+                == np.array(["In progress","in progress"])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                ]
+                == np.array([2.944444444444444,4.944444444444445])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                ]
+                == np.array([0,1])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                ]
+                == np.array([-0.06250000000000006,0.04166666666666669,])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                ]
+                == np.array([1.28094758874425,0.04728014822296863,])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                ]
+                == np.array([0.3333333333333333,0.3333333333333333,])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                ]
+                == np.array([0.0,0.0])
+            )
+        )
+
 
     def test_extract_feature_dynamics_one_valued_timeseries(self):   
 

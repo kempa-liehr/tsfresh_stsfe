@@ -1,9 +1,11 @@
 #### Just playin around with the feature calculators
 import pandas as pd
 from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
-from scipy.signal import cwt, ricker, find_peaks_cwt
+from scipy.signal import cwt, ricker, find_peaks_cwt, welch
 import numpy as np 
 from scipy.stats import linregress
+import itertools
+from statsmodels.tsa.stattools import pacf
 
 feature_fcs = ComprehensiveFCParameters()
 
@@ -48,13 +50,23 @@ def _into_subchunks(x, subchunk_length, every_n=1):
 # This is just a helper function to print whats going on to the screen
 
 window_length = 4
-
+fd1_all = []
+fd2_all = []
+fd3_all = []
+fd4_all = []
+fd5_all = []
+fd6_all = []
+fd7_all = []
+fd8_all = []
+fd9_all = []
+fd10_all = []
+fd11_all = []
 
 for group_name, df_group in timeseries_sorted.groupby(["id", "kind"]):
 
     print("Timeseries index:")
     print(group_name)
-    print("Timeseries values (chunked)")
+    #print("Timeseries values (chunked)")
     ts_values = df_group["val"].tolist()
 
     ts_values_chunks = [ts_values[x:x+window_length] for x in range(0, len(ts_values), window_length)]
@@ -73,7 +85,7 @@ for group_name, df_group in timeseries_sorted.groupby(["id", "kind"]):
 
     for timeseries_chunk in ts_values_chunks:
         
-        print(timeseries_chunk)
+        #print(timeseries_chunk)
         
         # Doing cwt by "hand"
         widths = [2,3,4]
@@ -152,9 +164,11 @@ for group_name, df_group in timeseries_sorted.groupby(["id", "kind"]):
 
     ##### Now we have the feature timeseries, extract the feature dynamics with window = 4
 
+    output_for_sym_looking_res_chunks = list(map(lambda x : float(x), output_for_sym_looking_res_chunks))
+
     # cwt_coefficients and with first_location_of_minimum
     fd1 = np.argmin(np.asarray(output_for_cwt_chunks)) / len(np.asarray(output_for_cwt_chunks))
-
+    fd1_all.append(fd1)
 
     # friedrich_coefficients and index_mass_quantile
     q = 0.1  
@@ -163,7 +177,7 @@ for group_name, df_group in timeseries_sorted.groupby(["id", "kind"]):
     s = np.sum(abs_x)
     mass_centralized = np.cumsum(abs_x) / s
     fd2 = (np.argmax(mass_centralized >= q) + 1) / len(output_for_friedrich_coefficients_chunks)
-
+    fd2_all.append(fd2)
     
     # standard_deviation and lempel_ziv_complexity
     bins = 2
@@ -183,23 +197,23 @@ for group_name, df_group in timeseries_sorted.groupby(["id", "kind"]):
             ind += inc
             inc = 1
     fd3 = len(sub_strings) / n
-
+    fd3_all.append(fd3)
 
     # linear_trend and longest_strike_above_mean
     fd4 = np.max(_get_length_sequences_where(np.asarray(output_for_linear_trend_res_chunks) > np.mean(np.asarray(output_for_linear_trend_res_chunks))))
-
+    fd4_all.append(fd4)
     
     # Matrix profiles and mean_abs_change
     fd5 = "In progress"
-
+    fd5_all.append(fd5)
     
     # mean_change and mean_second_derivative_central
     fd6 = (np.asarray(output_for_mean_change_res_chunks)[-1] - np.asarray(output_for_mean_change_res_chunks)[-2] - np.asarray(output_for_mean_change_res_chunks)[1] + np.asarray(output_for_mean_change_res_chunks)[0]) / (2 * (len(np.asarray(output_for_mean_change_res_chunks)) - 2))
-
+    fd6_all.append(fd6)
     
     # number_crossing_m and number_cwt_peaks
     fd7 = len(find_peaks_cwt(vector=output_for_num_crossing_m_res_chunks, widths=np.array(list(range(1, n + 1))), wavelet=ricker))
-
+    fd7_all.append(fd7)
     
     # number_peaks and partial_autocorrelation
     n = len(output_for_number_peaks_res_chunks)
@@ -215,11 +229,13 @@ for group_name, df_group in timeseries_sorted.groupby(["id", "kind"]):
         pacf_coeffs = [np.nan] * (max_demanded_lag + 1)
 
     fd8 = pacf_coeffs[lag]
+    fd8_all.append(fd8)
     
     # skewness and spkt_welch_density
     coeff = 1
     freq, pxx = welch(output_for_skewnes_res_chunks, nperseg=min(len(output_for_skewnes_res_chunks), 256))
     fd9 = pxx[coeff]
+    fd9_all.append(fd9)
     
     # symmetry_looking and time_reversal_asymmetry_statistic
     n = len(output_for_sym_looking_res_chunks)
@@ -231,14 +247,27 @@ for group_name, df_group in timeseries_sorted.groupby(["id", "kind"]):
         two_lag = _roll(output_for_sym_looking_res_chunks, 2 * -lag)
         fd10 = np.mean((two_lag * two_lag * one_lag - one_lag * output_for_sym_looking_res_chunks * output_for_sym_looking_res_chunks)[0 : (n - 2 * lag)])
 
+    fd10_all.append(fd10)
     
     # variance_larger_than_standard_deviation and variation_coefficient
     fd11 = np.std(output_for_var_larger_than_std_res_chunks) / np.mean(output_for_var_larger_than_std_res_chunks)
+    fd11_all.append(fd11)
 
 
-    for feature_dynamic in [fd1,fd2,fd3,fd4,fd5,fd6,fd7,fd8,fd9,fd10,fd11]:
-        print(feature_dynamic)
+for feature_dynamic in [
+    fd1_all,
+    fd2_all,
+    fd3_all,
+    fd4_all,
+    fd5_all,
+    fd6_all,
+    fd7_all,
+    fd8_all,
+    fd9_all,
+    fd10_all,
+    fd11_all
+    ]:
+    print("Feature vector:")
+    print(feature_dynamic)
     
-
-    print("\n\n")
 
