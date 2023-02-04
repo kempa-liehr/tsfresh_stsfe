@@ -20,10 +20,12 @@ from tsfresh.utilities.distribution import IterableDistributorBaseClass, MapDist
 class PandasDynamicsExtractionTestCase(DataTestCase):
     """ Tests to ensure that time series feature dynamics are created properly"""
 
-
     def test_extract_feature_dynamics(self):
-        # TODO: implement more methods and test more aspects
+
         df = self.create_test_data_sample()
+
+        df.to_csv("THIS_IS_THE_INPUT_TIMESERIES_FOR_CHECKING_EXTRACTION.csv", index=False)
+        
         window_length = 15
         extracted_feature_dynamics = extract_feature_dynamics(
             df,
@@ -37,6 +39,34 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
             },
             feature_dynamics_fc_parameters={window_length: ComprehensiveFCParameters()},
         )
+
+
+        #################################################################
+        # Complex features
+
+        # cwt_coefficients with a = 3 and with window 4 and with first_location_of_minimum
+
+        # friedrich_coefficients and index_mass_quantile
+
+        # standard_deviation and lempel_ziv_complexity
+
+        # linear_trend and longest_strike_above_mean
+
+        # Matrix profiles and mean_abs_change
+
+        # mean_change and mean_second_derivative_central
+
+        # number_crossing_m and number_cwt_peaks
+
+        # number_peaks and partial_autocorrelation
+
+        # skewness and spkt_welch_density
+
+        # symmetry_looking and time_reversal_asymmetry_statistic
+
+        # variance_larger_than_standard_deviation and variation_coefficient
+
+        #################################################################
 
         self.assertIsInstance(extracted_feature_dynamics, pd.DataFrame)
         self.assertTrue(
@@ -239,6 +269,23 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
         Checks that the different pandas input format does not affect the output
         """
         assert True
+
+    def test_extract_feature_dynamics_unequal_feature_calculators(self):
+        """
+        Tests extraction using: 
+        
+        1). 
+        a. A large set of feature timeseries calculators
+        b. A small set of feature dynamics calculators
+
+        2).
+        a. A small set of feature timeseries calculators
+        b. A large set of feature dynamics calculators
+        """
+        
+        assert True
+
+    
 
     def test_extract_feature_dynamics_for_one_time_series(self):
         # TODO: implement more methods and test more aspects
