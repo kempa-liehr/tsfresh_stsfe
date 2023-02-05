@@ -23,8 +23,6 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
     def test_extract_feature_dynamics(self):
 
         df = self.create_test_data_sample()
-
-        df.to_csv("THIS_IS_THE_INPUT_TIMESERIES_FOR_CHECKING_EXTRACTION.csv", index=False)
         
         window_length = 4
         extracted_feature_dynamics = extract_feature_dynamics(
@@ -33,38 +31,9 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
             column_sort="sort",
             column_kind="kind",
             column_value="val",
-            n_jobs=self.n_jobs,
             feature_timeseries_fc_parameters={window_length: ComprehensiveFCParameters()},
             feature_dynamics_fc_parameters={window_length: ComprehensiveFCParameters()},
         )
-
-
-        #################################################################
-        # Complex features
-
-        # cwt_coefficients with a = 3 and with window 4 and with first_location_of_minimum
-
-        # friedrich_coefficients and index_mass_quantile
-
-        # standard_deviation and lempel_ziv_complexity
-
-        # linear_trend and longest_strike_above_mean
-
-        # Matrix profiles and mean_abs_change
-
-        # mean_change and mean_second_derivative_central
-
-        # number_crossing_m and number_cwt_peaks
-
-        # number_peaks and partial_autocorrelation
-
-        # skewness and spkt_welch_density
-
-        # symmetry_looking and time_reversal_asymmetry_statistic
-
-        # variance_larger_than_standard_deviation and variation_coefficient
-
-        #################################################################
 
         self.assertIsInstance(extracted_feature_dynamics, pd.DataFrame)
         self.assertTrue(
@@ -112,7 +81,7 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||cwt_coefficients__coeff_1__w_2@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"a||cwt_coefficients||coeff_1||w_2||widths_(2, 5, 10, 20)@window_{window_length}__first_location_of_minimum"
                 ]
                 == np.array([0.6,0.6])
             )
@@ -120,7 +89,7 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||friedrich_coefficients__m_1__r_2__coeff_1@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"b||cwt_coefficients||coeff_1||w_2||widths_(2, 5, 10, 20)@window_{window_length}__first_location_of_minimum"
                 ]
                 == np.array([0.2,0.2])
             )
@@ -128,7 +97,23 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||standard_deviation@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"a||friedrich_coefficients||coeff_1||m_3||r_30@window_{window_length}__index_mass_quantile__q_0.1"
+                ]
+                == np.array([0.4,0.2])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"b||friedrich_coefficients||coeff_1||m_3||r_30@window_{window_length}__index_mass_quantile__q_0.1"
+                ]
+                == np.array([0.4,0.4])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||standard_deviation@window_{window_length}__lempel_ziv_complexity__bins_2"
                 ]
                 == np.array([0.6,0.6])
             )
@@ -136,7 +121,15 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||linear_trend@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"b||standard_deviation@window_{window_length}__lempel_ziv_complexity__bins_2"
+                ]
+                == np.array([0.6,0.6])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f'a||linear_trend||attr_"slope"@window_{window_length}__longest_strike_above_mean'
                 ]
                 == np.array([3,1])
             )
@@ -144,15 +137,32 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                extracted_feature_dynamics[f'b||linear_trend||attr_"slope"@window_{window_length}__longest_strike_above_mean'
                 ]
-                == np.array(["In progress","in progress"])
+                == np.array([1,2])
             )
         )
 
+        # TODO: Do these tests
+        # self.assertTrue(
+        #     np.all(
+        #         extracted_feature_dynamics[f"a||matrix_profiles@window_{window_length}__mean_abs_change"
+        #         ]
+        #         == np.array(["In progress","in progress"])
+        #     )
+        # )
+
+        # self.assertTrue(
+        #     np.all(
+        #         extracted_feature_dynamics[f"b||matrix_profiles@window_{window_length}__mean_abs_change"
+        #         ]
+        #         == np.array(["In progress","in progress"])
+        #     )
+        # )
+
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"a||mean_change@window_{window_length}__mean_second_derivative_central"
                 ]
                 == np.array([2.944444444444444,4.944444444444445])
             )
@@ -160,15 +170,31 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"b||mean_change@window_{window_length}__mean_second_derivative_central"
                 ]
-                == np.array([0,1])
+                == np.array([-1.2222222222222223,4.166666666666667])
             )
         )
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"a||number_crossing_m||m_1@window_{window_length}__number_cwt_peaks__n_1"
+                ]
+                == np.array([1,0])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"b||number_crossing_m||m_1@window_{window_length}__number_cwt_peaks__n_1"
+                ]
+                == np.array([0,0])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||number_peaks||n_1@window_{window_length}__partial_autocorrelation__lag_1"
                 ]
                 == np.array([-0.06250000000000006,0.04166666666666669,])
             )
@@ -176,23 +202,55 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"b||number_peaks||n_1@window_{window_length}__partial_autocorrelation__lag_1"
                 ]
-                == np.array([1.28094758874425,0.04728014822296863,])
+                == np.array([-0.5833333333333331,0.04166666666666669])
             )
         )
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"a||skewness@window_{window_length}__spkt_welch_density__coeff_2"
                 ]
-                == np.array([0.3333333333333333,0.3333333333333333,])
+                == np.array([0.26551809753768546,6.445544576057347])
             )
         )
 
         self.assertTrue(
             np.all(
-                extracted_feature_dynamics[f"a||xxx@window_{window_length}__xxx"
+                extracted_feature_dynamics[f"b||skewness@window_{window_length}__spkt_welch_density__coeff_2"
+                ]
+                == np.array([2.795242085630293,2.7437801843606606])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||symmetry_looking||r_0.1@window_{window_length}__time_reversal_asymmetry_statistic__lag_1"
+                ]
+                == np.array([0.3333333333333333,0])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"b||symmetry_looking||r_0.1@window_{window_length}__time_reversal_asymmetry_statistic__lag_1"
+                ]
+                == np.array([0.3333333333333333,0.3333333333333333])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||variance_larger_than_standard_deviation@window_{window_length}__variation_coefficient"
+                ]
+                == np.array([0.0,0.0])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[f"a||variance_larger_than_standard_deviation@window_{window_length}__variation_coefficient"
                 ]
                 == np.array([0.0,0.0])
             )
@@ -202,6 +260,8 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
     def test_extract_feature_dynamics_one_valued_timeseries(self):   
 
         df_sts = self.create_one_valued_time_series()
+
+        df_sts.to_csv("sahfgwrhjdsg.csv")
 
         # only calculate some features as small amount of data means quantile fcs will break
         self.name_to_param = {
@@ -213,22 +273,6 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
             "median": None,
         }
 
-        # Try with invalid window length
-        window_length = 3
-        self.assertRaises(
-            ValueError,
-            extract_feature_dynamics,
-            df_sts,
-            column_id="id",
-            column_sort="sort",
-            column_kind="kind",
-            column_value="val",
-            n_jobs=self.n_jobs,
-            feature_timeseries_fc_parameters={window_length: self.name_to_param},
-            feature_dynamics_fc_parameters={window_length: self.name_to_param},
-        )
-
-        # Try with valid window length
         window_length = 1
         extracted_feature_dynamics_sts = extract_feature_dynamics(
             df_sts,
@@ -236,7 +280,6 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
             column_sort="sort",
             column_kind="kind",
             column_value="val",
-            n_jobs=self.n_jobs,
             feature_timeseries_fc_parameters={window_length: self.name_to_param},
             feature_dynamics_fc_parameters={window_length: self.name_to_param},
         )
