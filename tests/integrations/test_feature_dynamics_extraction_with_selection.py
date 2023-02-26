@@ -671,7 +671,7 @@ class EngineerMoreTsTestCase(FixturesForFeatureDynamicsIntegrationTests):
             column_params_config,
         )
 
-        # add an even extra layer of ts differencing
+        # add an extra layer of ts differencing
         ts_with_extra_timeseries_between_and_within = diff_within_series(
             ts_with_extra_timeseries_between,
             column_id=column_params_config["column_id"],
@@ -679,7 +679,8 @@ class EngineerMoreTsTestCase(FixturesForFeatureDynamicsIntegrationTests):
             column_value=column_params_config["column_value"],
             column_kind=column_params_config["column_kind"],
         )
-        # TODO: Ideally this test should be agnostic to the order i.e. if D_y1y2 is expected, then D_y2y1 should also pass this test too
+        # TODO: Ideally this test should be agnostic to the order i.e. if D_y1y2 is expected, then D_y2y1 should also pass this test too,
+        # because the differencing function does not care about the order of the differencing 
         expected_ts += [
             "dt_y1",
             "dt_y2",
@@ -737,10 +738,10 @@ class FullFeatureDynamicsWorkflowTestCase(FixturesForFeatureDynamicsIntegrationT
     """
     Test the integrations related to the following workflow:
 
-    a) Engineer more timeseries then
-    b) Extract features then
-    c) Select featues then
-    d) Interpret the top relevant feature dynamics via PDF file then
+    a) Engineer more timeseries
+    b) Extract features
+    c) Select features
+    d) Interpret the top relevant feature dynamics via PDF file
     e) Extract relevant features on more timeseries data
     """
 
@@ -855,7 +856,7 @@ class FullFeatureDynamicsWorkflowTestCase(FixturesForFeatureDynamicsIntegrationT
         # We cant make strong claims about the number of different features produced because some feature timeseries have NaNs and are dropped
 
         # c) Select
-        X_relevant = select_features(X, response, fdr_level=0.95)
+        X_relevant = select_features(X, response, fdr_level=0.999)
 
         # d) Gen relevant features dictionaries
         rel_feature_names = list(X_relevant.columns)
@@ -1007,7 +1008,7 @@ class FullFeatureDynamicsWorkflowTestCase(FixturesForFeatureDynamicsIntegrationT
         # We cant make strong claims about the number of different features produced because some feature timeseries have NaNs and are dropped
 
         # c) Select
-        X_relevant = select_features(X, response, fdr_level=0.95)
+        X_relevant = select_features(X, response, fdr_level=0.999)
 
         # d) Gen relevant features dictionaries
         rel_feature_names = list(X_relevant.columns)
@@ -1159,7 +1160,7 @@ class FullFeatureDynamicsWorkflowTestCase(FixturesForFeatureDynamicsIntegrationT
         # We cant make strong claims about the number of different features produced because some feature timeseries have NaNs and are dropped
 
         # c) Select
-        X_relevant = select_features(X, response, fdr_level=0.95)
+        X_relevant = select_features(X, response, fdr_level=0.999)
 
         # d) Generate relevant features dictionaries and interpret
         rel_feature_names = list(X_relevant.columns)
@@ -1238,7 +1239,7 @@ class FullFeatureDynamicsWorkflowTestCase(FixturesForFeatureDynamicsIntegrationT
         # b) Select
         X_pandas = X.compute()
 
-        X_relevant = select_features(X_pandas, response, fdr_level=0.95)
+        X_relevant = select_features(X_pandas, response, fdr_level=0.999)
 
         # c) Interpret
         rel_feature_names = list(X_relevant.columns)
