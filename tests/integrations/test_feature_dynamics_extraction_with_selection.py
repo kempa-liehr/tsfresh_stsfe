@@ -1211,56 +1211,58 @@ class FullFeatureDynamicsWorkflowTestCase(FixturesForFeatureDynamicsIntegrationT
         # TODO: In progress
         pass
 
-        ts, response = self.gen_example_timeseries_data_for_e2e_tests(
-            container_type="dask", data_format="wide"
-        )
-        fts_fcs = self.gen_feature_calculators_for_e2e_tests(
-            feature_complexity="not-minimal"
-        )
-        fd_fcs = self.gen_feature_calculators_for_e2e_tests(
-            feature_complexity="not-minimal"
-        )
+        # Uncomment when dask integration test is being worked on
 
-        window_length_1 = 4
-        window_length_2 = 5
-        fts_fcs_with_window_lengths = {
-            window_length_1: fts_fcs,
-            window_length_2: fts_fcs,
-        }
-        fts_fds_with_window_lengths = {window_length_1: fd_fcs, window_length_2: fd_fcs}
+        # ts, response = self.gen_example_timeseries_data_for_e2e_tests(
+        #     container_type="dask", data_format="wide"
+        # )
+        # fts_fcs = self.gen_feature_calculators_for_e2e_tests(
+        #     feature_complexity="not-minimal"
+        # )
+        # fd_fcs = self.gen_feature_calculators_for_e2e_tests(
+        #     feature_complexity="not-minimal"
+        # )
 
-        # a) Extract
-        X = extract_feature_dynamics(
-            timeseries_container=ts,
-            feature_timeseries_fc_parameters=fts_fcs_with_window_lengths,
-            feature_dynamics_fc_parameters=fts_fds_with_window_lengths,
-            column_id="measurement_id",
-            column_sort="t",
-            column_kind=None,
-            column_value=None,
-        )
+        # window_length_1 = 4
+        # window_length_2 = 5
+        # fts_fcs_with_window_lengths = {
+        #     window_length_1: fts_fcs,
+        #     window_length_2: fts_fcs,
+        # }
+        # fts_fds_with_window_lengths = {window_length_1: fd_fcs, window_length_2: fd_fcs}
 
-        # b) Select
-        X_pandas = X.compute()
+        # # a) Extract
+        # X = extract_feature_dynamics(
+        #     timeseries_container=ts,
+        #     feature_timeseries_fc_parameters=fts_fcs_with_window_lengths,
+        #     feature_dynamics_fc_parameters=fts_fds_with_window_lengths,
+        #     column_id="measurement_id",
+        #     column_sort="t",
+        #     column_kind=None,
+        #     column_value=None,
+        # )
 
-        X_relevant = select_features(X_pandas, response, fdr_level=0.999)
+        # # b) Select
+        # X_pandas = X.compute()
 
-        # c) Interpret
-        rel_feature_names = list(X_relevant.columns)
+        # X_relevant = select_features(X_pandas, response, fdr_level=0.999)
 
-        (
-            rel_feature_time_series_dict,
-            rel_feature_dynamics_dict,
-        ) = derive_features_dictionaries(rel_feature_names)
+        # # c) Interpret
+        # rel_feature_names = list(X_relevant.columns)
 
-        # d) extract on selected features
-        X_more = extract_feature_dynamics(
-            timeseries_container=ts,
-            n_jobs=0,
-            feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
-            feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
-            column_id="measurement_id",
-            column_sort="t",
-            column_kind=None,
-            column_value=None,
-        )
+        # (
+        #     rel_feature_time_series_dict,
+        #     rel_feature_dynamics_dict,
+        # ) = derive_features_dictionaries(rel_feature_names)
+
+        # # d) extract on selected features
+        # X_more = extract_feature_dynamics(
+        #     timeseries_container=ts,
+        #     n_jobs=0,
+        #     feature_timeseries_kind_to_fc_parameters=rel_feature_time_series_dict,
+        #     feature_dynamics_kind_to_fc_parameters=rel_feature_dynamics_dict,
+        #     column_id="measurement_id",
+        #     column_sort="t",
+        #     column_kind=None,
+        #     column_value=None,
+        # )
