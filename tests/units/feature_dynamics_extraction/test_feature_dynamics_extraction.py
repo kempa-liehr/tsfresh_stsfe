@@ -20,6 +20,11 @@ from tsfresh.utilities.distribution import IterableDistributorBaseClass, MapDist
 class PandasDynamicsExtractionTestCase(DataTestCase):
     """ Tests to ensure that time series feature dynamics are created properly"""
 
+
+    def setUp(self):
+        self.n_jobs = 1
+        self.directory = tempfile.gettempdir()
+
     def test_extract_feature_dynamics(self):
 
         df = self.create_test_data_sample()
@@ -141,24 +146,7 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
                 ]
                 == np.array([1,2])
             )
-        )
-
-        # TODO: Do these tests
-        # self.assertTrue(
-        #     np.all(
-        #         extracted_feature_dynamics[f"a||matrix_profiles@window_{window_length}__mean_abs_change"
-        #         ]
-        #         == np.array(["In progress","in progress"])
-        #     )
-        # )
-
-        # self.assertTrue(
-        #     np.all(
-        #         extracted_feature_dynamics[f"b||matrix_profiles@window_{window_length}__mean_abs_change"
-        #         ]
-        #         == np.array(["In progress","in progress"])
-        #     )
-        # )
+        )      
 
         self.assertTrue(
             np.all(
@@ -261,8 +249,6 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
         df_sts = self.create_one_valued_time_series()
 
-        df_sts.to_csv("sahfgwrhjdsg.csv")
-
         # only calculate some features as small amount of data means quantile fcs will break
         self.name_to_param = {
             "maximum": None,
@@ -311,10 +297,139 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
         )
     
     def test_extract_feature_dynamics_multiple_window_lengths(self):
-        assert True
+
+        df = self.create_test_data_sample()
+        
+        window_length_1 = 4
+        window_length_2 = 3
+        extracted_feature_dynamics = extract_feature_dynamics(
+            df,
+            column_id="id",
+            column_sort="sort",
+            column_kind="kind",
+            column_value="val",
+            feature_timeseries_fc_parameters={window_length_1: ComprehensiveFCParameters(), window_length_2: ComprehensiveFCParameters()},
+            feature_dynamics_fc_parameters={window_length_1: ComprehensiveFCParameters(), window_length_2: ComprehensiveFCParameters()},
+        )
+
+        self.assertIsInstance(extracted_feature_dynamics, pd.DataFrame)
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[
+                    f"a||abs_energy@window_{window_length_1}__variance_larger_than_standard_deviation"
+                ]
+                == np.array([1.0, 1.0])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[
+                    f"a||sum_values@window_{window_length_1}__sum_values"
+                ]
+                == np.array([691, 1017])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[
+                    f"a||abs_energy@window_{window_length_2}__variance_larger_than_standard_deviation"
+                ]
+                == np.array([1.0, 1.0])
+            )
+        )
+
+        self.assertTrue(
+            np.all(
+                extracted_feature_dynamics[
+                    f"a||sum_values@window_{window_length_2}__sum_values"
+                ]
+                == np.array([691, 1017])
+            )
+        )
+        
 
     def test_extract_feature_dynamics_empty_feature_calculators(self):
-        assert True
+        
+        df = self.create_test_data_sample()
+        window_length = 4
+
+        self.assertRaises(
+            ValueError, 
+            extract_feature_dynamics, 
+            df, 
+            column_id = "id", 
+            column_sort = "sort",
+            column_kind = "kind", 
+            column_value = "val", 
+            feature_timeseries_fc_parameters = {window_length: {}},
+            feature_dynamics_fc_parameters = {window_length: {}}
+            )
+
+        self.assertRaises(
+            ValueError, 
+            extract_feature_dynamics, 
+            df, 
+            column_id = "id", 
+            column_sort = "sort",
+            column_kind = "kind", 
+            column_value = "val", 
+            feature_timeseries_fc_parameters = {},
+            feature_dynamics_fc_parameters = {}
+            )  
+
+        # One empty dictionary with window length specified
+        self.assertRaises(
+            ValueError, 
+            extract_feature_dynamics, 
+            df, 
+            column_id = "id", 
+            column_sort = "sort",
+            column_kind = "kind", 
+            column_value = "val", 
+            feature_timeseries_fc_parameters = {window_length: {}},
+            feature_dynamics_fc_parameters = {window_length: ComprehensiveFCParameters()}
+            )
+
+        self.assertRaises(
+            ValueError, 
+            extract_feature_dynamics, 
+            df, 
+            column_id = "id", 
+            column_sort = "sort",
+            column_kind = "kind", 
+            column_value = "val", 
+            feature_timeseries_fc_parameters = {window_length: ComprehensiveFCParameters()},
+            feature_dynamics_fc_parameters = {window_length: {}}
+            )
+
+        # One fully empty dictionary
+        self.assertRaises(
+            ValueError, 
+            extract_feature_dynamics, 
+            df, 
+            column_id = "id", 
+            column_sort = "sort",
+            column_kind = "kind", 
+            column_value = "val", 
+            feature_timeseries_fc_parameters = {window_length: ComprehensiveFCParameters()},
+            feature_dynamics_fc_parameters = {}
+            )
+       
+
+        self.assertRaises(
+            ValueError, 
+            extract_feature_dynamics, 
+            df, 
+            column_id = "id", 
+            column_sort = "sort",
+            column_kind = "kind", 
+            column_value = "val", 
+            feature_timeseries_fc_parameters = {},
+            feature_dynamics_fc_parameters = {window_length: ComprehensiveFCParameters()}
+            )
+
 
     def test_extract_feature_dynamics_invalid_window_lengths(self):
         
@@ -383,11 +498,37 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
                 }
             },
         )
-        # TODO: More asserts
         assert len(extracted_features.columns) == 4 and len(extracted_features) == 2
 
     def test_extract_feature_dynamics_uses_only_kind_to_fc_settings_invalid_inputs(self):
-        assert True
+        df = self.create_test_data_sample()
+        invalid_window_lengths = [0, -10]
+        feature_calculators = {"maximum": None, "minimum": None}
+
+        for window_length in invalid_window_lengths:
+
+            self.assertRaises(ValueError, extract_feature_dynamics, df, column_id = "id", column_sort = "sort", column_kind = "kind", column_value = "val", n_jobs = self.n_jobs, feature_timeseries_kind_to_fc_parameters={
+                    window_length: {"a": feature_calculators}
+                },
+                feature_dynamics_kind_to_fc_parameters={
+                    window_length: {
+                        "a||maximum@window_5": feature_calculators,
+                        "a||minimum@window_5": feature_calculators,
+                    }
+                })
+
+        # Now try an invalid type
+        window_length = 2.5
+        self.assertRaises(TypeError, extract_feature_dynamics, df, column_id = "id", column_sort = "sort", column_kind = "kind", column_value = "val", n_jobs = self.n_jobs, feature_timeseries_kind_to_fc_parameters={
+                    window_length: {"a": feature_calculators}
+                },
+                feature_dynamics_kind_to_fc_parameters={
+                    window_length: {
+                        "a||maximum@window_5": feature_calculators,
+                        "a||minimum@window_5": feature_calculators,
+                    }
+                })
+        
 
     def test_extract_feature_dynamics_multiple_window_lengths(self):
         assert True
@@ -395,6 +536,7 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
     def test_extract_feature_dynamics_input_format_idempotency(self):
         """
         Checks that the different pandas input format does not affect the output
+        TODO: Louis
         """
         assert True
 
@@ -416,7 +558,6 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
     
 
     def test_extract_feature_dynamics_for_one_time_series(self):
-        # TODO: implement more methods and test more aspects
         df = self.create_test_data_sample()
         settings = ComprehensiveFCParameters()
         window_length = 5
@@ -457,70 +598,6 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
             np.all(
                 extracted_feature_dynamics[f"b||median@window_{window_length}__median"]
                 == np.array([39.5, 28.0])
-            )
-        )
-
-    def test_blah_blah(self):
-
-        df_sts = self.create_one_valued_time_series()
-
-        # only calculate some features as small amount of data means quantile fcs will break
-        self.name_to_param = {
-            "maximum": None,
-            "sum_values": None,
-            "abs_energy": None,
-            "minimum": None,
-            "mean": None,
-            "median": None,
-        }
-
-        window_length = 2
-        self.assertRaises(
-            ValueError,
-            extract_feature_dynamics,
-            df_sts,
-            feature_timeseries_fc_parameters={window_length: self.name_to_param},
-            feature_dynamics_fc_parameters={window_length: self.name_to_param},
-            column_value="val",
-            column_id="id",
-            column_kind="kind",
-            column_sort="sort",
-        )
-
-        window_length = 1
-        extracted_feature_dynamics_sts = extract_feature_dynamics(
-            df_sts,
-            feature_timeseries_fc_parameters={window_length: self.name_to_param},
-            feature_dynamics_fc_parameters={window_length: self.name_to_param},
-            column_value="val",
-            column_id="id",
-            column_kind="kind",
-            column_sort="sort",
-        )
-
-        self.assertIsInstance(extracted_feature_dynamics_sts, pd.DataFrame)
-        self.assertTrue(
-            np.all(
-                extracted_feature_dynamics_sts[
-                    f"a||maximum@window_{window_length}__maximum"
-                ]
-                == np.array([1.0, 6.0])
-            )
-        )
-        self.assertTrue(
-            np.all(
-                extracted_feature_dynamics_sts[
-                    f"a||sum_values@window_{window_length}__sum_values"
-                ]
-                == np.array([1.0, 11.0])
-            )
-        )
-        self.assertTrue(
-            np.all(
-                extracted_feature_dynamics_sts[
-                    f"a||minimum@window_{window_length}__minimum"
-                ]
-                == np.array([1.0, 5.0])
             )
         )
 
@@ -663,14 +740,6 @@ class PandasDynamicsExtractionTestCase(DataTestCase):
 
             self.assertEqual(col_name_chunks, list(sorted(col_name_chunks)))
 
-
-
-class PandasDynamicsExtractionAdvancedFeaturesTestCase(DataTestCase):
-
-    def setUp(self):
-        self.n_jobs = 1
-        self.directory = tempfile.gettempdir()
-
     def test_profiling_file_written_out(self):
 
         df = pd.DataFrame(
@@ -778,7 +847,6 @@ class PandasParallelDynamicsExtractionTestCase(DataTestCase):
         }
 
     def test_extract_feature_dynamics(self):
-        # TODO: implement more methods and test more aspects
         df = self.create_test_data_sample()
         window_length = 15
         extracted_feature_dynamics = extract_feature_dynamics(

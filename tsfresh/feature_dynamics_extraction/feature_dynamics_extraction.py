@@ -58,7 +58,7 @@ def extract_feature_dynamics(
     (relevant_fts_dict,) = relevant_fts_dicts
     (relevant_fd_dict,) = relevant_fd_dicts
 
-    if relevant_fts_dict == {} or relevant_fts_dict == {}:
+    if relevant_fts_dict == {} or relevant_fd_dict == {}:
         raise ValueError("Dictionaries are empty")
 
     if set(relevant_fd_dict) != set(relevant_fts_dict):
@@ -69,6 +69,9 @@ def extract_feature_dynamics(
     Xs = []
 
     for window_length in relevant_fts_dict.copy().keys():
+
+        if relevant_fts_dict[window_length] == {} or relevant_fd_dict[window_length] == {}:
+            raise ValueError(f"Feature calculators for window length: {window_length} are empty") 
 
         X = do_feature_dynamics_extraction(
             timeseries_container,

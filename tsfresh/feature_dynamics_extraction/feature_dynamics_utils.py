@@ -219,10 +219,8 @@ def diff_within_series(
 
     if column_sort is None:
         indexing_columns = [column_id]
-        sort_column = []
     else:
         indexing_columns = [column_id, column_sort]
-        sort_column = [column_sort]
 
     # Case 1: Flat dataframe
     if isinstance(data, WideTsFrameAdapter):
@@ -233,13 +231,24 @@ def diff_within_series(
             f"dt_{kind}" for kind in timeseries_container.drop(indexing_columns, axis=1)
         ]
 
-        timeseries_container_cp[new_kinds] = (
-            timeseries_container.sort_values(sort_column)
-            .drop(sort_column, axis=1)
-            .groupby(column_id)
-            .diff()
-            .fillna(0)
-        )
+        if column_sort is not None:
+
+            timeseries_container_cp[new_kinds] = (
+                timeseries_container.sort_values(column_sort)
+                .drop(column_sort, axis=1)
+                .groupby(column_id)
+                .diff()
+                .fillna(0)
+            )
+
+        else:
+
+            timeseries_container_cp[new_kinds] = (
+                timeseries_container
+                .groupby(column_id)
+                .diff()
+                .fillna(0)
+            )
 
     # Case 2: Stacked dataframe
     elif isinstance(data, LongTsFrameAdapter):
@@ -259,12 +268,22 @@ def diff_within_series(
 
                 new_timeseries = dataframe.copy()
 
-                new_timeseries[column_value] = (
-                    new_timeseries.sort_values(sort_column)
-                    .groupby(column_id)[column_value]
-                    .diff()
-                    .fillna(0)
-                )
+                if column_sort is not None:
+
+                    new_timeseries[column_value] = (
+                        new_timeseries.sort_values(column_sort)
+                        .groupby(column_id)[column_value]
+                        .diff()
+                        .fillna(0)
+                    )
+                
+                else: 
+                    new_timeseries[column_value] = (
+                        new_timeseries
+                        .groupby(column_id)[column_value]
+                        .diff()
+                        .fillna(0)
+                    )
 
                 new_timeseries[column_kind] = f"dt_{kind}"
 
@@ -283,12 +302,25 @@ def diff_within_series(
 
             new_timeseries = flat_dataframe.copy()
 
-            new_timeseries[column_value] = (
-                new_timeseries.sort_values(sort_column)
-                .groupby(column_id)[column_value]
-                .diff()
-                .fillna(0)
-            )
+            if column_sort is not None:
+
+                new_timeseries[column_value] = (
+                    new_timeseries.sort_values(column_sort)
+                    .groupby(column_id)[column_value]
+                    .diff()
+                    .fillna(0)
+                )
+            
+            else:
+                new_timeseries[column_value] = (
+                    new_timeseries
+                    .groupby(column_id)[column_value]
+                    .diff()
+                    .fillna(0)
+                )
+
+
+            print(new_timeseries)
 
             timeseries_container_cp[f"dt_{kind}"] = new_timeseries
 
