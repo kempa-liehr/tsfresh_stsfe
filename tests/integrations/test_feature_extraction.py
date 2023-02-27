@@ -6,10 +6,9 @@ from unittest import TestCase
 import dask.dataframe as dd
 import pandas as pd
 
-from tsfresh import extract_features, extract_relevant_features
+from tsfresh import extract_features
 from tsfresh.examples.driftbif_simulation import load_driftbif
 from tsfresh.feature_extraction import MinimalFCParameters
-
 
 class FeatureExtractionTestCase(TestCase):
     def setUp(self):

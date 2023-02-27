@@ -36,6 +36,12 @@ class Timeseries(namedtuple("Timeseries", ["id", "kind", "data"])):
     of feature settings in `feature_extraction.settings.from_columns`.
     """
 
+    def __len__(self):
+        """
+        Gets number of datapoints in the timeseries
+        """
+        return len(self.data.index)
+
 
 class TsData:
     """
@@ -51,6 +57,15 @@ class TsData:
 
     pass
 
+class ApplyableTsData(TsData):
+    """
+    TsData base class to use, if an iterable ts data can not be used.
+    Its only interface is an apply function, which should be applied
+    to each of the chunks of the data. How this is done
+    depends on the implementation.
+    """
+    def apply(self, f, **kwargs):
+        raise NotImplementedError
 
 class PartitionedTsData(Iterable[Timeseries], Sized, TsData):
     """
@@ -97,6 +112,14 @@ class PartitionedTsData(Iterable[Timeseries], Sized, TsData):
         return_df = return_df.sort_index()
 
         return return_df
+
+    def get_length_of_smallest_timeseries(self):
+        smallest_timeseries = min(self, key = len)
+        return len(smallest_timeseries)
+
+    def get_length_of_largest_timeseries(self):
+        largest_timeseries = max(self, key = len)
+        return len(largest_timeseries)
 
 
 def _check_colname(*columns):
@@ -315,8 +338,7 @@ class TsDictAdapter(PartitionedTsData):
     def __len__(self):
         return sum(grouped_df.ngroups for grouped_df in self.grouped_dict.values())
 
-
-class DaskTsAdapter(TsData):
+class DaskTsAdapter(ApplyableTsData):
     def __init__(
         self, df, column_id, column_kind=None, column_value=None, column_sort=None
     ):
@@ -331,7 +353,7 @@ class DaskTsAdapter(TsData):
             df, column_id, column_sort, column_kind
         )
 
-        # The user has already a kind column. That means we just need to group by id (and additionally by id)
+        # The user has already a kind column. That means we just need to group by id (and additionally by sort)
         if column_kind is not None:
             if column_kind not in df.columns:
                 raise ValueError(f"Column not found: {column_kind}")
@@ -380,6 +402,7 @@ class DaskTsAdapter(TsData):
         self.column_kind = column_kind
         self.column_value = column_value
         self.column_sort = column_sort
+        self.df_id_type = df[column_id].dtype
 
     def apply(self, f, meta, **kwargs):
         """
@@ -416,7 +439,6 @@ class DaskTsAdapter(TsData):
         )
 
         return feature_table
-
 
 def to_tsdata(
     df, column_id=None, column_kind=None, column_value=None, column_sort=None

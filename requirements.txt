@@ -1,5 +1,5 @@
 requests>=2.9.1
-numpy>=1.15.1
+numpy >=1.15.1, <1.24
 pandas>=0.25.0
 scipy>=1.2.0
 statsmodels>=0.13
@@ -8,5 +8,8 @@ scikit-learn>=0.22.0
 tqdm>=4.10.0
 dask[dataframe]>=2.9.0
 distributed>=2.11.0
+md2pdf>=0.5 # For PDF feature names explainations
+mock
+pytest>=7.2.0
 stumpy>=1.7.2
 cloudpickle

@@ -189,7 +189,6 @@ def extract_features(
 
     return result
 
-
 def _do_extraction(
     df,
     column_id,

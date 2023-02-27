@@ -1,6 +1,6 @@
 import math
 from unittest import TestCase
-from unittest.mock import Mock
+from unittest.mock import Mock 
 
 import numpy as np
 import pandas as pd
@@ -13,286 +13,55 @@ from tsfresh.feature_extraction.data import (
     TsDictAdapter,
     WideTsFrameAdapter,
     to_tsdata,
+    Timeseries
 )
 from tsfresh.utilities.distribution import MultiprocessingDistributor
-
-TEST_DATA_EXPECTED_TUPLES = [
-    (
-        10,
-        "a",
-        pd.Series(
-            [
-                36,
-                71,
-                27,
-                62,
-                56,
-                58,
-                67,
-                11,
-                2,
-                24,
-                45,
-                30,
-                0,
-                9,
-                41,
-                28,
-                33,
-                19,
-                29,
-                43,
-            ],
-            index=[10] * 20,
-        ),
-    ),
-    (
-        10,
-        "b",
-        pd.Series(
-            [
-                78,
-                37,
-                23,
-                44,
-                6,
-                3,
-                21,
-                61,
-                39,
-                31,
-                53,
-                16,
-                66,
-                50,
-                40,
-                47,
-                7,
-                42,
-                38,
-                55,
-            ],
-            index=[10] * 20,
-        ),
-    ),
-    (
-        500,
-        "a",
-        pd.Series(
-            [
-                76,
-                72,
-                74,
-                75,
-                32,
-                64,
-                46,
-                35,
-                15,
-                70,
-                57,
-                65,
-                51,
-                26,
-                5,
-                25,
-                10,
-                69,
-                73,
-                77,
-            ],
-            index=[500] * 20,
-        ),
-    ),
-    (
-        500,
-        "b",
-        pd.Series(
-            [
-                8,
-                60,
-                12,
-                68,
-                22,
-                17,
-                18,
-                63,
-                49,
-                34,
-                20,
-                52,
-                48,
-                14,
-                79,
-                4,
-                1,
-                59,
-                54,
-                13,
-            ],
-            index=[500] * 20,
-        ),
-    ),
-]
-
-WIDE_TEST_DATA_EXPECTED_TUPLES = [
-    (
-        10,
-        "a",
-        pd.Series(
-            [
-                11,
-                9,
-                67,
-                45,
-                30,
-                58,
-                62,
-                19,
-                56,
-                29,
-                0,
-                27,
-                36,
-                43,
-                33,
-                2,
-                24,
-                71,
-                41,
-                28,
-            ],
-            index=list(range(20)),
-        ),
-    ),
-    (
-        10,
-        "b",
-        pd.Series(
-            [
-                50,
-                40,
-                39,
-                7,
-                53,
-                23,
-                16,
-                37,
-                66,
-                38,
-                6,
-                47,
-                3,
-                61,
-                44,
-                42,
-                78,
-                31,
-                21,
-                55,
-            ],
-            index=list(range(20)),
-        ),
-    ),
-    (
-        500,
-        "a",
-        pd.Series(
-            [
-                15,
-                35,
-                25,
-                32,
-                69,
-                65,
-                70,
-                64,
-                51,
-                46,
-                5,
-                77,
-                26,
-                73,
-                76,
-                75,
-                72,
-                74,
-                10,
-                57,
-            ],
-            index=list(range(20, 40)),
-        ),
-    ),
-    (
-        500,
-        "b",
-        pd.Series(
-            [
-                4,
-                14,
-                68,
-                22,
-                18,
-                52,
-                54,
-                60,
-                79,
-                12,
-                49,
-                63,
-                8,
-                59,
-                1,
-                13,
-                20,
-                17,
-                48,
-                34,
-            ],
-            index=list(range(20, 40)),
-        ),
-    ),
-]
 
 
 class DataAdapterTestCase(DataTestCase):
     def test_long_tsframe(self):
         df = self.create_test_data_sample()
         data = LongTsFrameAdapter(df, "id", "kind", "val", "sort")
+        test_data_expected_tuples = self.create_test_data_expected_tuples()
 
-        self.assert_tsdata(data, TEST_DATA_EXPECTED_TUPLES)
+        self.assert_tsdata(data, test_data_expected_tuples)
 
     def test_long_tsframe_no_value_column(self):
         df = self.create_test_data_sample()
         data = LongTsFrameAdapter(df, "id", "kind", None, "sort")
+        test_data_expected_tuples = self.create_test_data_expected_tuples()
 
-        self.assert_tsdata(data, TEST_DATA_EXPECTED_TUPLES)
+        self.assert_tsdata(data, test_data_expected_tuples)
 
     def test_wide_tsframe(self):
         df = self.create_test_data_sample_wide()
         data = WideTsFrameAdapter(df, "id", "sort")
+        # I think test is wrong here - wide df is wrong...
+        wide_test_data_expected_tuples = self.create_test_data_expected_tuples_wide()
 
-        self.assert_tsdata(data, WIDE_TEST_DATA_EXPECTED_TUPLES)
+        self.assert_tsdata(data, wide_test_data_expected_tuples)
 
     def test_wide_tsframe_without_sort(self):
         df = self.create_test_data_sample_wide()
         del df["sort"]
         data = WideTsFrameAdapter(df, "id")
+        wide_test_data_expected_tuples = self.create_test_data_expected_tuples_wide()
 
-        self.assert_tsdata(data, WIDE_TEST_DATA_EXPECTED_TUPLES)
+        self.assert_tsdata(data, wide_test_data_expected_tuples)
 
     def test_dict_tsframe(self):
         df = {key: df for key, df in self.create_test_data_sample().groupby(["kind"])}
         data = TsDictAdapter(df, "id", "val", "sort")
+        test_data_expected_tuples = self.create_test_data_expected_tuples()
 
-        self.assert_tsdata(data, TEST_DATA_EXPECTED_TUPLES)
+        self.assert_tsdata(data, test_data_expected_tuples)
 
     def assert_tsdata(self, data, expected):
         self.assertEqual(len(data), len(expected))
         self.assertEqual(sum(1 for _ in data), len(data))
         self.assert_data_chunk_object_equal(data, expected)
 
-    def assert_data_chunk_object_equal(self, result, expected):
+    def assert_data_chunk_object_equal(self, result, expected):        
         dic_result = {str(x[0]) + "_" + str(x[1]): x[2] for x in result}
         dic_expected = {str(x[0]) + "_" + str(x[1]): x[2] for x in expected}
         for k in dic_result.keys():
@@ -320,7 +89,7 @@ class DataAdapterTestCase(DataTestCase):
         df.sort_values(by=["id", "kind", "sort"], inplace=True)
 
         result = to_tsdata(df, "id", "kind", "val", "sort")
-        expected = TEST_DATA_EXPECTED_TUPLES
+        expected = self.create_test_data_expected_tuples()
 
         self.assert_data_chunk_object_equal(result, expected)
 
@@ -599,3 +368,25 @@ class PivotListTestCase(TestCase):
         self.assertEqual(np.sum(np.sum(np.isnan(return_df))), 0)
         # test if all entries are there
         self.assertEqual(return_df.sum().sum(), 24502500)
+
+
+class PartitionedTsDataTestCase(DataTestCase):
+    """
+    Tests methods for PartitionedTsData
+    """
+
+    def test_get_length_of_largest_and_smallest_timeseries(self):
+
+        # TODO: Factor out calls to other methods i.e. to_tsdata() !!!! 
+
+        df = pd.DataFrame({"id":[1,1,1,1,1,1,1,1,2,2,2], "sort":[1,2,3,4,5,7,8,9,1,2,3], "kind":11*["a"], "val":11*[5]})
+        test_data = LongTsFrameAdapter(df, "id", "kind", "val", "sort") # (maybe) TODO: Mock this object
+
+        expected_length_of_largest_timeseries = 8
+        expected_length_of_smallest_timeseries = 3
+
+        length_of_largest_timeseries = test_data.get_length_of_largest_timeseries()
+        length_of_smallest_timeseries = test_data.get_length_of_smallest_timeseries()
+
+        self.assertEqual(length_of_largest_timeseries,expected_length_of_largest_timeseries) 
+        self.assertEqual(length_of_smallest_timeseries,expected_length_of_smallest_timeseries)
